@@ -278,6 +278,60 @@ test('startup: no dangling renamed identifiers in the built bundle', () => {
   assert.deepEqual([...indexed].filter((n) => !declared.has(n)), []);
 });
 
+test('atmosphere: no sea remnants in the built bundle', () => {
+  assert.ok(!/seabed/i.test(built));
+  assert.ok(!/caustic/i.test(built));
+  assert.ok(!/\bcaus\b/i.test(built));
+  assert.ok(!built.includes('1.33'));
+});
+
+test('atmosphere: ambient is mountain sky blue / warm sunset, not underwater blue', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(shadersSrc.includes('vec3f(.55, .72, .94)'));
+  assert.ok(shadersSrc.includes('vec3f(.96, .84, .64)'));
+  assert.ok(!shadersSrc.includes('vec3f(.35, .62, .85)'));
+  assert.ok(!shadersSrc.includes('vec3f(.45, .58, .80)'));
+});
+
+test('atmosphere: fog is neutral aerial haze, not blue-green absorption', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(shadersSrc.includes('vec3f(.011, .012, .013)'));
+  assert.ok(!shadersSrc.includes('vec3f(.020, .018, .016)'));
+  assert.ok(!shadersSrc.includes('vec3f(.020, .018, .015)'));
+});
+
+test('atmosphere: light is not dimmed below y=0 (no underwater depth term)', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(!shadersSrc.includes('min(p.y, 0.)'));
+  assert.ok(!shadersSrc.includes('min(y, 0.)'));
+  assert.ok(!shadersSrc.includes('sat(-p.y / 30.)'));
+  assert.ok(!shadersSrc.includes('sat(-y / 30.)'));
+});
+
+test('atmosphere: dappled sunlight, not caustics; no water texture left', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(/dapple/i.test(shadersSrc));
+  assert.ok(!/caus/i.test(shadersSrc));
+  assert.ok(!/W_WATER|tWater/.test(shadersSrc));
+  const mainSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'main.js'), 'utf8');
+  assert.ok(!/tWater|waterPass|W_WATER|pWater/.test(mainSrc));
+  assert.ok(mainSrc.includes('tDap'));
+});
+
+test('atmosphere: cloud sea is not a water surface (no refraction)', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(!shadersSrc.includes('refract('));
+  assert.ok(!/the water looks/.test(shadersSrc));
+});
+
+test('atmosphere: sunset zone is autumn, not purple', () => {
+  const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
+  assert.ok(!/purple/i.test(worldSrc));
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(shadersSrc.includes('vec3f(.42, .08, .02)'));
+  assert.ok(!shadersSrc.includes('vec3f(.20, .02, .12)'));
+});
+
 test('meshes build headlessly (mesh-smoke.mjs)', async () => {
   const { execFile } = require('node:child_process');
   const { promisify } = require('node:util');
