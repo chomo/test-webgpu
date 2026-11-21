@@ -134,3 +134,68 @@ test('iPhone: quality heuristic prefers Medium on 6+ core iOS, Low below', () =>
   assert.equal(C.qualityFor({ coarse: true, deviceMemory: undefined, hardwareConcurrency: 6, isiOS: true, crashed: false }), 1);
   assert.equal(C.qualityFor({ coarse: true, deviceMemory: undefined, hardwareConcurrency: 5, isiOS: true, crashed: false }), 2);
 });
+
+const O = require('../source/src/objects.js');
+
+test('torii: two pillars, wide upturned kasagi, nuki and centred gaku', () => {
+  const parts = O.toriiParts();
+  const pillars = parts.filter((p) => p.kind === 'pillar');
+  assert.equal(pillars.length, 2);
+  assert.ok(Math.abs(pillars[0].x + pillars[1].x) < 0.01);
+  const spacing = Math.abs(pillars[0].x - pillars[1].x);
+  const kasagi = parts.find((p) => p.kind === 'kasagi');
+  assert.ok(kasagi.w > spacing);
+  assert.ok(kasagi.rise > 0.3);
+  assert.ok(parts.some((p) => p.kind === 'nuki'));
+  const gaku = parts.find((p) => p.kind === 'gaku');
+  assert.equal(gaku.x, 0);
+});
+
+test('hut: log courses, gabled roof pitch, chimney', () => {
+  const h = O.hutLogs();
+  assert.ok(h.courses >= 8);
+  assert.ok(h.roofPitchDeg >= 25 && h.roofPitchDeg <= 45);
+  assert.ok(h.chimney && h.chimney.h > 0);
+  assert.ok(h.width >= 8 && h.width <= 10);
+  assert.ok(h.depth >= 5 && h.depth <= 7);
+});
+
+test('eagle wing: chord tapers from body to tip', () => {
+  assert.ok(O.eagleWingChord(0) >= 0.95 && O.eagleWingChord(0) <= 1.05);
+  assert.ok(O.eagleWingChord(0.5) >= 0.55 && O.eagleWingChord(0.5) <= 0.7);
+  assert.ok(O.eagleWingChord(0.95) < 0.2);
+  assert.ok(O.eagleWingChord(0.9) < O.eagleWingChord(0.5));
+  assert.equal(O.eagleWingSpan(), 2);
+});
+
+test('bird wing: smaller chord, same taper', () => {
+  assert.ok(O.birdWingChord(0) >= 0.5 && O.birdWingChord(0) <= 0.6);
+  assert.ok(O.birdWingChord(0.5) >= 0.3 && O.birdWingChord(0.5) <= 0.45);
+  assert.ok(O.birdWingChord(0.95) < 0.1);
+});
+
+test('pine trunk: radius tapers from base to crown; whorls in 5 tiers', () => {
+  const H = 30;
+  assert.ok(O.pineTrunkRadius(0, H) >= 0.3 && O.pineTrunkRadius(0, H) <= 0.45);
+  assert.ok(O.pineTrunkRadius(0, H) > O.pineTrunkRadius(H / 2, H));
+  assert.ok(O.pineTrunkRadius(H / 2, H) > O.pineTrunkRadius(H, H));
+  assert.ok(O.pineTrunkRadius(H, H) > 0);
+  const wh = O.pineWhorlHeights(H);
+  assert.equal(wh.length, 5);
+  for (let i = 1; i < wh.length; i++) assert.ok(wh[i] > wh[i - 1]);
+  assert.ok(wh[0] > 0.2 * H && wh[4] < 0.9 * H);
+});
+
+const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
+
+test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () => {
+  assert.ok(!/keel|bowsprit|stern castle|cephalic|manta|fluke/i.test(worldSrc));
+  assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));
+});
+
+test('built index.html: vermilion torii, eagle brown, pale bird belly, rock snow', () => {
+  assert.ok(built.includes('vec3f(.62,.12,.04)'));
+  assert.ok(built.includes('vec3f(.23,.15,.08)'));
+  assert.ok(built.includes('vec3f(.82,.78,.70)'));
+  assert.ok(built.includes('vec3f(.85,.88,.92)'));
+});
