@@ -374,7 +374,7 @@ function makeWorld(D, T, flyPts, POSES) {
     const t = Lp; Lp = Ln; Ln = t;
   }
 
-  // --- ground map: r magenta cover, b purple zone, a sand
+  // --- ground map: r autumn cover, b sunset zone, a scree
   const gm = new Uint8Array(512 * 512 * 4);
   for (let j = 0; j < 512; j++) for (let i = 0; i < 512; i++) {
     const x = (i + 0.5) / 512 * 384 - 192, z = (j + 0.5) / 512 * 384 - 192, o = (i + 512 * j) * 4;

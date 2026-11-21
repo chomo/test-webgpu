@@ -43,7 +43,7 @@ const sClamp = device.createSampler({ magFilter: 'linear', minFilter: 'linear' }
 const sCmp = device.createSampler({ compare: 'less-equal', magFilter: 'linear', minFilter: 'linear' });
 const tShadow = tex(SHADOW, SHADOW, DEPTH, TU.RENDER_ATTACHMENT | TU.TEXTURE_BINDING);
 const tDummy = tex(1, 1, DEPTH, TU.RENDER_ATTACHMENT | TU.TEXTURE_BINDING);
-const tWater = tex(WATER, WATER, HDR, TU.RENDER_ATTACHMENT | TU.TEXTURE_BINDING, { mips: 5 });
+const tDap = tex(DAP, DAP, HDR, TU.RENDER_ATTACHMENT | TU.TEXTURE_BINDING, { mips: 5 });
 const tDetail = tex(1024, 1024, 'rgba8unorm', TU.RENDER_ATTACHMENT | TU.TEXTURE_BINDING, { mips: 11 });
 const tVol = tex(NX / 2, NY / 2, 'rg8unorm', TU.TEXTURE_BINDING | TU.COPY_DST, { d: NZ / 2 });
 const tMap = tex(512, 512, 'rgba8unorm', TU.TEXTURE_BINDING | TU.COPY_DST);
@@ -61,7 +61,7 @@ const bgl0 = device.createBindGroupLayout({ entries: [
   { binding: 7, visibility: VF, texture: { viewDimension: '3d' } }, { binding: 8, visibility: VF, texture: {} }] });
 const mkBG0 = (u, sh) => device.createBindGroup({ layout: bgl0, entries: [
   { binding: 0, resource: { buffer: u } }, { binding: 1, resource: sRep }, { binding: 2, resource: sClamp }, { binding: 3, resource: sCmp },
-  { binding: 4, resource: sh.createView() }, { binding: 5, resource: tWater.createView() }, { binding: 6, resource: tDetail.createView() },
+  { binding: 4, resource: sh.createView() }, { binding: 5, resource: tDap.createView() }, { binding: 6, resource: tDetail.createView() },
   { binding: 7, resource: tVol.createView() }, { binding: 8, resource: tMap.createView() }] });
 const bg0 = mkBG0(ubo, tShadow), bg0s = mkBG0(uboS, tDummy);
 const pl0 = device.createPipelineLayout({ bindGroupLayouts: [bgl0] });
@@ -81,7 +81,7 @@ const vbSolid = { arrayStride: 16, attributes: [A(0, 0, 'float32x3'), A(1, 12, '
 const ibSolid = { arrayStride: 48, stepMode: 'instance', attributes: [A(2, 0, 'float32x4'), A(3, 16, 'float32x4'), A(4, 32, 'float32x4')] };
 const ibLeaf = { arrayStride: 36, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4'), A(2, 32, 'unorm8x4')] };
 const ibAnim = { arrayStride: 32, stepMode: 'instance', attributes: [A(2, 0, 'float32x4'), A(3, 16, 'float32x4')] };
-const ibBub = { arrayStride: 32, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4')] };
+const ibMote = { arrayStride: 32, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4')] };
 const ibSnow = { arrayStride: 16, stepMode: 'instance', attributes: [A(0, 0, 'float32x4')] };
 
 const scenePipe = (m, vsE, fsE, buffers, o = {}) => device.createRenderPipeline({ layout: pl0,
@@ -105,19 +105,19 @@ const pLeafF = scenePipe(mLeaf, 'vs', 'fs', [ibLeaf], { strip: true, constants: 
 const pBird = scenePipe(mAnim, 'vsBird', 'fsBird', [vbSolid, ibAnim]);
 const pEagle = scenePipe(mAnim, 'vsEagle', 'fsEagle', [vbSolid, ibAnim]);
 const pSurf = scenePipe(mSurf, 'vs', 'fs', [], { strip: true }), pBack = scenePipe(mSurf, 'vsB', 'fsB', [], { strip: true });
-const pBub = scenePipe(mSpr, 'vsBub', 'fsBub', [ibBub], { strip: true, blend: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } });
+const pMote = scenePipe(mSpr, 'vsMote', 'fsMote', [ibMote], { strip: true, blend: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' } } });
 const ADD = { color: { srcFactor: 'one', dstFactor: 'one' }, alpha: { srcFactor: 'one', dstFactor: 'one' } };
 const pSnow = scenePipe(mSpr, 'vsSnow', 'fsSnow', [ibSnow], { strip: true, blend: ADD });
-const pGl = scenePipe(mLeaf, 'vsGl', 'fsGl', [ibBub], { strip: true, blend: ADD, constants: { ROWS: 7 } });
+const pGl = scenePipe(mLeaf, 'vsGl', 'fsGl', [ibMote], { strip: true, blend: ADD, constants: { ROWS: 7 } });
 const pSolidSh = shadowPipe(mSolid, 'vs', [vbSolid, ibSolid]), pTerrSh = shadowPipe(mSolid, 'vs', [vbSolid, ibSolid], { cull: 'front' });
 const pLeafSh = shadowPipe(mLeaf, 'vs', [ibLeaf], { strip: true, constants: { ROWS: 3 } });
 
-const mWater = mod(W_WATER);
-const pWater = device.createRenderPipeline({ layout: 'auto', vertex: { module: mWater, entryPoint: 'vs' }, fragment: { module: mWater, entryPoint: 'fs', targets: [{ format: HDR }] } });
-const bgWater = device.createBindGroup({ layout: pWater.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: uboW } }] });
-const waterViews = [0, 1, 2, 3, 4].map((m) => tWater.createView({ baseMipLevel: m, mipLevelCount: 1 }));
-const waterBG = waterViews.map((v) => blitBG(v));
-const waterPass = waterViews.map((v) => ({ colorAttachments: [colorAtt(v, true)] }));
+const mDap = mod(W_DAPPLE);
+const pDap = device.createRenderPipeline({ layout: 'auto', vertex: { module: mDap, entryPoint: 'vs' }, fragment: { module: mDap, entryPoint: 'fs', targets: [{ format: HDR }] } });
+const bgDap = device.createBindGroup({ layout: pDap.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: uboW } }] });
+const dapViews = [0, 1, 2, 3, 4].map((m) => tDap.createView({ baseMipLevel: m, mipLevelCount: 1 }));
+const dapBG = dapViews.map((v) => blitBG(v));
+const dapPass = dapViews.map((v) => ({ colorAttachments: [colorAtt(v, true)] }));
 
 const mRays = mod(W_RAYS), mPost = mod(W_POST), mRB = mod(W_RBLUR);
 const pRB = device.createRenderPipeline({ layout: 'auto', vertex: { module: mRB, entryPoint: 'vs' }, fragment: { module: mRB, entryPoint: 'fs', targets: [{ format: HDR }] } });
@@ -141,7 +141,7 @@ const SUN = (() => { const v = [0.27, 1, -0.24], l = hypot(...v); return v.map((
 }
 
 // ---------------------------------------------------------------- world generation
-await say('Sculpting the seabed…', 0.25, 1200);
+await say('Raising the ridges…', 0.25, 1200);
 // marks a load in progress (quality.js); leaving the page before it ends is not a crash
 keep('mountainLoad', 1);
 addEventListener('pagehide', () => keep('mountainLoad', ''));
@@ -163,16 +163,16 @@ let D;
   await br.mapAsync(GPUMapMode.READ);
   D = new Float32Array(br.getMappedRange().slice(0));
   br.unmap(); br.destroy(); bd.destroy();
-  // rock connected to the seabed: each column's unbroken run up from the bottom is, and the rock above a gap
+  // rock connected to the valley floor: each column's unbroken run up from the bottom is, and the rock above a gap
   // (overhangs, specks) is when it touches rock that is. What never connects is a speck of noise floating in
-  // the water (surface nets would make it a small box), so it becomes water
+  // the air (surface nets would make it a small box), so it becomes air
   const S = NX * NY, R = new Uint8Array(D.length), O = [1, -1, NX, -NX, S, -S], b = new Uint8Array(NX), L = [];
   for (let i = 0; i < D.length;) { b.fill(1); for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++, i++) if (D[i] <= 0) b[x] = 0; else if (b[x]) R[i] = 1; else L.push(i); }
   for (let k = 1; k; L.reverse()) { k = 0; for (const i of L) if (!R[i] && O.some((o) => R[i + o])) R[i] = k = 1; }
   for (const i of L) if (!R[i]) D[i] = -D[i];
 }
 // Distance to the rock for collide(), in 1/127 m (> 0 in rock, clamped to ±1 m), kept only in the 4x4x4-voxel
-// bricks near the surface within the camera's reach (~2 MB). CI per brick: 0 all water, 1 all rock, n brick n-2 in CG.
+// bricks near the surface within the camera's reach (~2 MB). CI per brick: 0 all air, 1 all rock, n brick n-2 in CG.
 const CO = 52, CN = 102, CI = new Uint16Array(CN * CN * NY / 4);
 let CG = new Int8Array(64 * 65534);
 {
@@ -324,7 +324,7 @@ function resize() {
   bgBlur = device.createBindGroup({ layout: pRB.getBindGroupLayout(0), entries: [{ binding: 0, resource: vRay }] });
   passPost = { colorAttachments: [{ view: null, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 1] }] };
   bgRays = device.createBindGroup({ layout: pRays.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: ubo } }, { binding: 1, resource: sRep }, { binding: 2, resource: sCmp },
-    { binding: 3, resource: tShadow.createView() }, { binding: 4, resource: tWater.createView() }, { binding: 5, resource: vDp }, { binding: 6, resource: tVol.createView() }, { binding: 7, resource: sClamp }] });
+    { binding: 3, resource: tShadow.createView() }, { binding: 4, resource: tDap.createView() }, { binding: 5, resource: vDp }, { binding: 6, resource: tVol.createView() }, { binding: 7, resource: sClamp }] });
   bgPost = device.createBindGroup({ layout: pPost.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: ubo } }, { binding: 1, resource: sClamp }, { binding: 2, resource: vRes },
     { binding: 3, resource: vRay2 }, { binding: 4, resource: vBl[0] }, { binding: 5, resource: vDp }] });
   bloomPass = []; bloomBG = [];
@@ -417,11 +417,11 @@ function render() {
   const e = device.createCommandEncoder();
   let slot = null;
   if (hasTS) { for (let i = 0; i < qRead.length; i++) if (!qRead[i].busy) { slot = qRead[i]; break; } }
-  waterPass[0].timestampWrites = slot ? tsBegin : undefined;
+  dapPass[0].timestampWrites = slot ? tsBegin : undefined;
   passPost.timestampWrites = slot ? tsEnd : undefined;
-  // animated water texture + mips
-  let r = e.beginRenderPass(waterPass[0]); r.setPipeline(pWater); r.setBindGroup(0, bgWater); r.draw(3); r.end();
-  for (let i = 1; i < 5; i++) { r = e.beginRenderPass(waterPass[i]); r.setPipeline(pMip16); r.setBindGroup(0, waterBG[i - 1]); r.draw(3); r.end(); }
+  // dappled-light texture + mips
+  let r = e.beginRenderPass(dapPass[0]); r.setPipeline(pDap); r.setBindGroup(0, bgDap); r.draw(3); r.end();
+  for (let i = 1; i < 5; i++) { r = e.beginRenderPass(dapPass[i]); r.setPipeline(pMip16); r.setBindGroup(0, dapBG[i - 1]); r.draw(3); r.end(); }
   // scene
   r = e.beginRenderPass(passScene);
   r.setBindGroup(0, bg0);
@@ -448,7 +448,7 @@ function render() {
   r.setPipeline(pLeafS); r.setVertexBuffer(0, ibSmall); drawCells(r, Wd.small.start, Wd.small.lo, Wd.small.hi, 1.5, false, 6, 0, 70);
   r.setPipeline(pSurf); r.draw(4);
   r.setPipeline(pBack); r.draw(4);
-  r.setPipeline(pBub); r.setVertexBuffer(0, ibPollen); r.draw(4, nPol);
+  r.setPipeline(pMote); r.setVertexBuffer(0, ibPollen); r.draw(4, nPol);
   r.setPipeline(pGl); r.setVertexBuffer(0, ibGl); r.draw(4, nGl);
   r.setPipeline(pSnow); r.setVertexBuffer(0, ibSnowB); r.draw(4, nSnow);
   r.end();
@@ -468,7 +468,7 @@ function render() {
   if (slot) { slot.busy = true; slot.b.mapAsync(GPUMapMode.READ).then(slot.done); }
 }
 
-// CS[j] = distance to the rock (metres, < 0 in water) at the camera + CE[3j..3j+2]: the camera, then ±0.375 m on
+// CS[j] = distance to the rock (metres, < 0 in air) at the camera + CE[3j..3j+2]: the camera, then ±0.375 m on
 // each axis for the gradient
 const CE = new Float64Array([0, 0, 0, .375, 0, 0, -.375, 0, 0, 0, .375, 0, 0, -.375, 0, 0, 0, .375, 0, 0, -.375]), CS = new Float64Array(7);
 const cv = (x, y, z) => { const b = CI[(x >> 2) + CN * ((y >> 2) + NY / 4 * (z >> 2))]; return b > 1 ? CG[b * 64 - 128 + (x & 3) + 4 * (y & 3) + 16 * (z & 3)] : b * 254 - 127; };
