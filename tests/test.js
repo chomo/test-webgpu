@@ -80,3 +80,34 @@ test('target spec: 2560x1440, avg frame <= 11ms, no frame > 16.7ms', () => {
   assert.equal(C.TARGET.avgMs, 11);
   assert.equal(C.TARGET.maxMs, 16.7);
 });
+
+const fs = require('node:fs');
+const path = require('node:path');
+const built = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+test('built index.html: mountain title, menu and credit, no sea leftovers', () => {
+  assert.ok(built.includes('<title>Mountain Garden</title>'));
+  assert.ok(built.includes('Enter the mountains'));
+  assert.ok(built.includes('github.com/Noniv/abyssal-garden'));
+  assert.ok(!/kelp|whale|manta/i.test(built.replace(/Abyssal Garden/g, '')));
+});
+
+test('built index.html: WGSL shaders and WebGPU error path present', () => {
+  assert.ok((built.match(/@vertex/g) || []).length >= 8);
+  assert.ok((built.match(/@fragment/g) || []).length >= 10);
+  assert.ok(built.includes('No WebGPU adapter found'));
+  assert.ok(built.includes('iOS / iPadOS 26'));
+});
+
+test('built index.html: iPhone support (safe-area, touch buttons, visualViewport)', () => {
+  assert.ok(built.includes('safe-area-inset'));
+  assert.ok(built.includes('viewport-fit=cover'));
+  assert.ok(built.includes('id=u') && built.includes('id=v'));
+  assert.ok(built.includes('visualViewport'));
+});
+
+test('built index.html: controls and viewpoints wired (WASD, Q/E, Shift, 1-6)', () => {
+  assert.ok(built.includes('KeyW') && built.includes('KeyQ') && built.includes('KeyE'));
+  assert.ok(built.includes('ShiftLeft') || built.includes('Shift'));
+  assert.ok(built.includes('Digit1'));
+});
