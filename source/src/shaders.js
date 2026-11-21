@@ -334,16 +334,21 @@ fn tri(p: vec3f, n: vec3f, s: f32) -> TP {
       flu = mg * .35;
       alb = mix(alb, alb * vec3f(.85, .8, 1.4) + vec3f(.015, .0, .05), gm.b * .8);
     }
+    let snow = ss(.55, .8, n0.y) * ss(-14., -8., i.wp.y);
+    alb = mix(alb, vec3f(.85, .88, .92) * (.7 + .5 * B.h), snow * .8);
   } else if (mat == 2) {
-    // torii: smooth pale stone with dark streaks running along its length
-    alb = mix(vec3f(.42, .47, .48), vec3f(.10, .13, .15), ss(.40, .62, sk.a * .6 + sk2.b * .5)) * (.75 + .3 * B.h);
-    alb = mix(alb, vec3f(.60, .64, .62), ss(.62, .75, sk2.a) * .5);
+    // torii: vermilion lacquer with weathered dark streaks along the grain
+    alb = mix(vec3f(.62, .12, .04), vec3f(.78, .20, .06), ss(.35, .65, B.c)) * (.75 + .35 * B.h);
+    alb = mix(alb, vec3f(.25, .05, .02), ss(.55, .75, sk.a * .6 + sk2.b * .5) * .7);
+    alb = mix(alb, vec3f(.85, .35, .10), ss(.7, .85, sk2.a) * .3);
     gloss = .9; bump = .3;
   } else if (mat == 3) {
-    alb = mix(vec3f(.13, .085, .05), vec3f(.36, .25, .14), Wd.b) * (.6 + .5 * B.h);
-    let pk = fract(atan2(i.op.z, 2. - i.op.y) * 7.);
-    alb *= .35 + .65 * ss(0., .12, min(pk, 1. - pk));
-    alb = mix(alb, vec3f(.08, .22, .16), ss(.5, .7, A.c) * .6);
+    // log cabin: warm log brown, dark groove at each log course, dark slate roof
+    alb = mix(vec3f(.16, .10, .05), vec3f(.38, .26, .14), Wd.b) * (.6 + .5 * B.h);
+    let course = fract(i.op.y / 0.56);
+    alb *= .55 + .45 * ss(.0, .2, min(course, 1. - course));
+    alb *= .8 + .2 * ss(.3, .7, A.c);
+    alb = mix(alb, vec3f(.16, .13, .11) * (.7 + .4 * B.h), ss(3.0, 3.2, i.op.y));
     gloss = .2; bump = .7;
   } else if (mat == 4) {
     let hue = fract(sd * 7.31);
@@ -512,7 +517,8 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
   let S = normalize(cross(vec3f(0., 1., 0.), T)); let Up = cross(T, S);
   let off = S * ((h.y - .5) * 5. + sin(t * .6 + s * 40.) * .5) + Up * ((h.z - .5) * 3.2 + cos(t * .5 + s * 31.) * .4);
   var l = i.p * i.b.z * (.75 + .5 * h.z);
-  l.z += sin(t * 9. + s * 50. + l.x * 5.) * .22 * (.25 * i.b.z - l.x);
+  l.y += sin(t * 9. + s * 50.) * .9 * abs(l.z);
+  l.z += sin(t * 7. + s * 40.) * .05 * max(-l.x, 0.);
   let w = P + off + T * l.x + Up * l.y + S * l.z;
   o.cp = g.vp * vec4f(w, 1.); o.wp = w; o.n = T * i.n.x + Up * i.n.y + S * i.n.z; o.op = i.p; o.sd = s;
   o.lt = shadow1(w);
@@ -521,8 +527,8 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
 @fragment fn fsBird(i: VO) -> @location(0) vec4f {
   let n = normalize(i.n); let L = g.sun.xyz; let V = normalize(g.cam.xyz - i.wp);
   let z = zone(i.wp); let vv = vol(i.wp);
-  var alb = mix(vec3f(.50, .68, .80), vec3f(.10, .22, .40), ss(-.05, .2, i.op.y));
-  alb = mix(alb, vec3f(.95, .8, .3), step(.86, fract(i.sd * 7.7)) * .6);
+  var alb = mix(vec3f(.82, .78, .70), vec3f(.20, .16, .12), ss(-.05, .2, i.op.y));
+  alb = mix(alb, vec3f(.75, .72, .65), step(.7, fract(i.sd * 5.3)) * .25);
   let E = sunE(i.wp.y, z) * i.lt;
   var c = alb * (E * (.25 + .75 * sat(dot(n, L))) + amb(i.wp, n, vv.g, z) * 1.3);
   c += E * pow(sat(dot(n, normalize(V + L))), 24.) * 1.6 + vec3f(.3, .6, .7) * pow(1. - sat(dot(n, V)), 3.) * .25 * vv.g;
@@ -559,18 +565,16 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
   let z = zone(i.wp); let vv = vol(i.wp);
   let top = ss(-.2, .25, normalize(i.n).y);
   let au = abs(i.op.x);
-  let gill = ss(.25, .0, abs(au - .13) * 8.) * ss(.04, .12, i.op.z) * ss(.34, .26, i.op.z) * ss(.2, .8, sin(i.op.z * 110.));
-  var belly = vec3f(.13, .17, .21) * (.6 + .6 * tx.b) * (1. - .7 * gill);
-  belly = mix(belly, vec3f(.05, .08, .11), sat(ss(.45, .9, au + tx.a * .35) + ss(-.1, -.4, i.op.z + tx.b * .2) * .7));
-  var back = vec3f(.04, .065, .10) + vec3f(.10, .16, .2) * ss(.5, .75, tx.a);
-  back = mix(back, vec3f(.36, .46, .52), ss(.25, .0, abs(au - .26) * 3.5 + abs(i.op.z - .12) * 5.) * .8);
+  var belly = vec3f(.82, .78, .70) * (.75 + .25 * tx.b);
+  var back = vec3f(.23, .15, .08) + vec3f(.10, .08, .05) * ss(.5, .75, tx.a);
+  back = mix(back, vec3f(.45, .35, .22), ss(.3, .0, abs(au - .5) * 3.5 + abs(i.op.z - .1) * 5.) * .5);
   var alb = mix(belly, back, top);
+  alb = mix(alb, vec3f(.85, .84, .80), ss(.42, .5, i.op.z) * .9);
+  alb = mix(alb, vec3f(.88, .86, .80), ss(-.8, -1.0, i.op.z) * .85);
   let E = sunE(i.wp.y, z) * shadow4(i.wp + n * .3);
   let ndv = sat(dot(n, V));
-  let ir = .5 + .5 * cos(TAU * (vec3f(0., .33, .67) + ndv * 1.1 + tx.a * 1.5 + .55));
   let fillN = vec3f(n.x, abs(n.y) * .55 + .25, n.z);
   var c = alb * (E * sat(dot(n, L)) * (.3 + ca) + amb(i.wp, fillN, vv.g, z) * 1.1 + side(i.wp, n, 1., z) * .8);
-  c += ir * vec3f(.35, .16, .6) * (.07 + .22 * tx.b) * (.4 + E.g * .2 * ca.g) * (1. - top * .3);
   c += E * pow(sat(dot(n, normalize(V + L))), 30.) * .5 * (.3 + ca);
   let sky = amb(i.wp, vec3f(0., 1., 0.), vv.g, z);
   c += alb * sky * ca * .45 * (1. - top) + sky * pow(1. - ndv, 3.) * .35;

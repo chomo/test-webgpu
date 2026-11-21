@@ -136,7 +136,7 @@ function makeWorld(D, T, flyPts, POSES) {
     const strands = 2 + (rnd() < 0.6) + (rnd() < 0.3), ph = rnd() * TAU, tw = rr(0.1, 0.28), sr = rr(0.2, 0.55), sc = rr(0.75, 1.25);
     const la = rnd() * TAU, lm = rr(0, 0.11), full = rr(0.55, 1.3) * dens;
     const stem = (s, h) => { const a = ph + s * TAU / strands + h * tw, r = sr * (1 - 0.6 * h / H), ln = lm * h * h / H; return [x + cos(a) * r + cos(la) * ln, z + sin(a) * r + sin(la) * ln, a]; };
-    for (let s = 0; s < strands; s++) for (let h = 0; h < H - 1; h += 1.7) { const p = stem(s, h); leaf(big, p[0], y + h, p[1], 2.1, p[2] + PI / 2, 0.1, 0.17, h, 1, rnd(), rnd(), 0.3); }
+    for (let s = 0; s < strands; s++) for (let h = 0; h < H - 1; h += 1.7) { const p = stem(s, h); leaf(big, p[0], y + h, p[1], 2.1, p[2] + PI / 2, 0.1, pineTrunkRadius(h, H), h, 1, rnd(), rnd(), 0.3); }
     const n = floor(H * 30 * full);
     for (let i = 0; i < n; i++) {
       const t = pow(rnd(), 0.9), h = t * H, p = stem((rnd() * strands) | 0, h);
@@ -144,6 +144,13 @@ function makeWorld(D, T, flyPts, POSES) {
       const tilt = mix(rr(0.4, 1.0), rr(0.15, 0.45), t);
       const type = kind === 1 ? (rnd() < 0.8 ? 3 : 4) : kind === 2 ? (rnd() < 0.5 ? 4 : 0) : 0;
       leaf(big, p[0], y + h, p[1], L, rnd() * TAU, tilt, L * (kind === 1 ? rr(0.09, 0.13) : rr(0.15, 0.21)) + 0.03, h, type, rnd(), rnd(), rr(0.38, 0.95));
+    }
+    for (const wh of pineWhorlHeights(H)) {
+      const t = wh / H, L = 1.35 * (1 - 0.35 * t);
+      for (let k = 0; k < 10; k++) {
+        const a = k / 10 * TAU + ph, r = 0.45 * (1 - 0.4 * t);
+        leaf(big, x + cos(a) * r, y + wh, z + sin(a) * r, L, a, 1.05, 0.12, wh, 0, rnd(), rnd(), 0.6);
+      }
     }
     for (let i = floor(H * (kind === 1 ? 16 : 13)); i > 0; i--) { const h = rnd() * H, a = rnd() * TAU, r = rr(0.15, 0.8) * (1 - 0.5 * h / H), ln = lm * h * h / H; glint(x + cos(a) * r + cos(la) * ln, y + h, z + sin(a) * r + sin(la) * ln, h, rnd(), kind === 1 ? rnd() : rnd() * 0.6, rr(0.018, 0.05), 0); }
     // light absorption footprint for the skylight bake
@@ -296,7 +303,7 @@ function makeWorld(D, T, flyPts, POSES) {
     chunks[(sc > 1.15 ? 3 : 0) + (rnd() * 3 | 0)][cellOf(x, z)].push(x - T.wn[k] * sc * 0.3, y - ny * sc * 0.3, z - T.wn[k + 2] * sc * 0.3, sc, q[0], q[1], q[2], q[3], 1, rnd(), sc > 1.15 ? 0 : 96, 0);
   }
   rseed(11);
-  for (let i = 0; i < 170000; i++) { // pebbles and rubble on the sea floor
+  for (let i = 0; i < 170000; i++) { // pebbles and rubble on the ground
     const k = pickV(), x = T.wp[k] + rr(-0.4, 0.4), z = T.wp[k + 2] + rr(-0.4, 0.4), y = T.wp[k + 1];
     if (T.wn[k + 1] < 0.8 || hypot(x, z) > 170 || nearFly(x, y, z, 1.3)) continue;
     const sc = 0.05 + 0.3 * pow(rnd(), 2), q = qRand();
@@ -438,120 +445,103 @@ function meshTubes() {
   }
   return m;
 }
-// stone torii: SDF of tapered capsules -> surface nets
+// vermilion wooden torii: two tapered pillars, nuki tie beam, gaku plaque,
+// shimaki and an upturned kasagi top lintel, on stone bases
 function meshTorii() {
-  const C = [];
-  const chain = (pts, zs) => { for (let i = 0; i < pts.length - 1; i++) C.push([...pts[i], ...pts[i + 1], zs]); };
-  chain([[0, -1.6, 3.7, 1.2], [0, 1.8, 2.35, 0.98], [0, 4.6, 1.0, 0.76], [0, 6.9, 0.1, 0.6]], 0.8);
-  chain([[0, 6.6, 0.1, 0.72], [1.9, 7.9, 0, 0.98], [3.9, 8.8, -0.1, 0.9], [5.7, 9.8, -0.25, 0.64], [7.0, 11.2, -0.4, 0.38], [7.7, 12.8, -0.55, 0.2], [7.9, 14.1, -0.65, 0.1]], 0.18);
-  chain([[0, 6.6, 0.1, 0.72], [-1.7, 8.3, 0.05, 0.96], [-3.3, 9.7, -0.05, 0.88], [-4.7, 11.2, -0.2, 0.64], [-5.6, 12.9, -0.4, 0.38], [-6.0, 14.6, -0.5, 0.2], [-5.9, 15.9, -0.6, 0.1]], 0.18);
-  const sdf = (x, y, z) => {
-    let d = 1e9;
-    for (const c of C) {
-      const zs = c[8], pz = z / zs, az = c[2] / zs, bz = c[6] / zs;
-      const bax = c[4] - c[0], bay = c[5] - c[1], baz = bz - az, pax = x - c[0], pay = y - c[1], paz = pz - az;
-      const h = clamp((pax * bax + pay * bay + paz * baz) / (bax * bax + bay * bay + baz * baz), 0, 1);
-      const e = (hypot(pax - bax * h, pay - bay * h, paz - baz * h) - mix(c[3], c[7], h)) * zs;
-      const k = 0.45, hh = max(k - abs(d - e), 0) / k;
-      d = min(d, e) - hh * hh * k * 0.25;
+  const m = new Mesh(), parts = toriiParts(), upZ = () => [0, 0, 1];
+  for (const pt of parts) {
+    if (pt.kind === 'pillar') {
+      const x = pt.x, top = x * 0.9;
+      m.sweep([[x, 0, 0], [x * 0.96, pt.h * 0.5, 0], [top, pt.h, 0]],
+        (k) => pt.w * (1 - 0.18 * k / 2), (k) => pt.w * (1 - 0.18 * k / 2), upZ);
+    } else if (pt.kind === 'base') {
+      m.sweep([[pt.x, 0, 0], [pt.x, pt.h, 0]], pt.w, pt.w, upZ);
+    } else if (pt.kind === 'kasagi') {
+      const y = pt.y, r = pt.rise, w = pt.w / 2;
+      m.sweep([[-w, y + r, 0], [-w * 0.5, y + r * 0.25, 0], [0, y, 0], [w * 0.5, y + r * 0.25, 0], [w, y + r, 0]], pt.d, pt.h);
+    } else {
+      m.sweep([[-pt.w / 2, pt.y, 0], [pt.w / 2, pt.y, 0]], pt.d, pt.h);
     }
-    return d;
-  };
-  const vs = 0.09, ox = -7.6, oy = -2.6, oz = -2.2, nx = 186, ny = 216, nz = 76, D = new Float32Array(nx * ny * nz);
-  for (let z = 0; z < nz; z++) for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) D[x + nx * (y + ny * z)] = -sdf(ox + x * vs, oy + y * vs, oz + z * vs);
-  const sn = surfaceNets(D, nx, ny, nz), smp = sampler3(D, nx, ny, nz);
-  const vb = new ArrayBuffer(sn.nv * 16), f = new Float32Array(vb), s = new Int8Array(vb);
-  for (let k = 0; k < sn.nv; k++) {
-    const x = sn.pos[k * 3], y = sn.pos[k * 3 + 1], z = sn.pos[k * 3 + 2], e = 0.7;
-    let ax = smp(x - e, y, z) - smp(x + e, y, z), ay = smp(x, y - e, z) - smp(x, y + e, z), az = smp(x, y, z - e) - smp(x, y, z + e);
-    const l = hypot(ax, ay, az) || 1;
-    f[k * 4] = ox + x * vs; f[k * 4 + 1] = oy + y * vs; f[k * 4 + 2] = oz + z * vs;
-    s[k * 16 + 12] = round(ax / l * 127); s[k * 16 + 13] = round(ay / l * 127); s[k * 16 + 14] = round(az / l * 127); s[k * 16 + 15] = 127;
   }
-  return { vb, ib: new Uint32Array(sn.idx), nv: sn.nv };
+  return m.build();
 }
-// log mountain hut (door at +x): keel with stem and stern posts, curved ribs, hull planking with a breach,
-// raised stern castle with transom, deck remnants, two masts with yards, bowsprit
+// log mountain hut (door at +x): stacked log walls, gabled roof, chimney
 function meshHut() {
   rseed(220);
-  const m = new Mesh(), Lh = 17, B = 5.6, Dp = 7.6;
-  const hb = (x) => B * pow(max(1 - pow(abs(x / Lh), x < 0 ? 3.6 : 2.6), 0), 0.5);
-  const dp = (x) => Dp * (1 - 0.36 * pow(abs(x / Lh), 2.5));
-  const sheer = (x) => 0.5 + (x > 0 ? 3.0 : 3.8) * pow(abs(x / Lh), 2.2);
-  const pt = (x, ph, off = 0) => { const b = hb(x) + off, d = dp(x) + off, s = sheer(x); return [x, s - (d + s) * pow(max(cos(ph), 0), 0.66), b * Math.sign(ph) * pow(abs(sin(ph)), 0.8)]; };
-  const out = (p) => { const l = hypot(p[1] + 0.5, p[2] * 1.3) || 1; return [0, (p[1] + 0.5) / l, p[2] * 1.3 / l]; };
-  const up = () => [0, 1, 0];
-  const keel = [];
-  for (let i = 0; i <= 44; i++) { const x = mix(-Lh - 1.0, Lh + 2.4, i / 44), e = max(abs(x) / Lh - 0.78, 0) * 4.2; keel.push([x, -dp(clamp(x, -Lh, Lh)) - 0.3 + e * e * e * 4.2, 0]); }
-  m.sweep(keel, 0.55, 0.95, up);
-  for (let x = -Lh + 0.7; x < Lh - 0.3; x += 0.8) {
-    const a0 = rnd() < 0.1 ? rr(-0.9, -0.2) : -PI / 2, a1 = rnd() < 0.1 ? rr(0.2, 0.9) : PI / 2, pts = [];
-    for (let i = 0; i <= 16; i++) pts.push(pt(x, mix(a0, a1, i / 16)));
-    m.sweep(pts, 0.24, 0.3, out);
+  const m = new Mesh(), H = hutLogs(), R = H.logR, W = H.width / 2, D = H.depth / 2;
+  for (let i = 0; i < H.courses; i++) {
+    const y = R * (2 * i + 1), ext = (i % 2 ? 0.3 : 0);
+    m.tube([[-W - ext, y, -D], [W + ext, y, -D]], R, 8, false);
+    m.tube([[-W - ext, y, D], [W + ext, y, D]], R, 8, false);
+    m.tube([[-W, y, -D - ext], [-W, y, D + ext]], R, 8, false);
+    m.tube([[W, y, -D - ext], [W, y, D + ext]], R, 8, false);
   }
-  const holeX = rr(-6, 2), holeS = rnd() < 0.5 ? 1 : -1;
-  const BR = [[holeX, holeS * 0.8, 3.2, 0.42], [7, -holeS * 0.95, 2.4, 0.34], [12, holeS * 0.5, 1.7, 0.28], [-11, -holeS * 0.55, 2.1, 0.3]];
-  const holed = (x, ph) => { for (const h of BR) { const a = (x - h[0]) / h[2], b = (ph - h[1]) / h[3]; if (a * a + b * b < 1 + 0.45 * sin(x * 3.1 + ph * 9)) return true; } return false; };
-  const NS = 14, xs = []; for (let x = -Lh + 0.35; x <= Lh - 0.3; x += 0.85) xs.push(x);
-  for (let j = 0; j < NS; j++) {
-    const p0 = mix(-1.5, 1.5, j / NS), p1 = mix(-1.5, 1.5, (j + 1) / NS), sg = p0 + p1 < 0 ? -1 : 1, lo = sg < 0 ? p1 : p0, hi = sg < 0 ? p0 : p1;
-    let pv = null;
-    for (const x of xs) {
-      const cu = [m.v(...pt(x, lo, 0.27)), m.v(...pt(x, hi, 0.14)), m.v(...pt(x, lo, 0.1)), m.v(...pt(x, hi, 0.1))];
-      if (pv && !holed(x - 0.42, (p0 + p1) / 2)) {
-        if (sg > 0) { m.quad(pv[0], pv[1], cu[1], cu[0]); m.quad(pv[2], cu[2], cu[3], pv[3]); }
-        else { m.quad(pv[0], cu[0], cu[1], pv[1]); m.quad(pv[2], pv[3], cu[3], cu[2]); }
-      }
-      pv = cu;
-    }
+  const ridge = H.wallH + (D + 0.9) * Math.tan(H.roofPitchDeg * Math.PI / 180);
+  for (const sx of [-1, 1]) {
+    const x = sx * W;
+    m.tri(m.v(x, H.wallH, -D), m.v(x, H.wallH, D), m.v(x, ridge, 0));
+    m.tri(m.v(x, H.wallH, D), m.v(x, H.wallH, -D), m.v(x, ridge, 0));
   }
-  for (const sgn of [-1, 1]) {
-    let pts = []; for (let x = -Lh + 0.6; x <= Lh - 0.6; x += 1) pts.push(pt(x, sgn * PI / 2, 0.2)); m.sweep(pts, 0.3, 0.28, up);
-    // stern castle bulwarks
-    for (let j = 0; j < 3; j++) { pts = []; for (let x = -Lh + 0.4; x <= -Lh + 8.5 - j; x += 0.9) pts.push([x, sheer(x) + 0.55 + j * 0.86, sgn * (max(hb(x), 2.6) + 0.15)]); m.sweep(pts, 0.82, 0.09, () => [0, 0, sgn]); }
+  for (const sz of [-1, 1]) {
+    const z0 = sz * (D + 0.9), z1 = 0;
+    m.quad(m.v(-W - 0.7, H.wallH - 0.1, z0), m.v(W + 0.7, H.wallH - 0.1, z0), m.v(W + 0.7, ridge, z1), m.v(-W - 0.7, ridge, z1));
+    m.quad(m.v(-W - 0.7, ridge, z1), m.v(W + 0.7, ridge, z1), m.v(W + 0.7, H.wallH - 0.1, z0), m.v(-W - 0.7, H.wallH - 0.1, z0));
   }
-  // transom
-  for (let y = -3; y < sheer(-Lh) + 3; y += 0.86) { const w = max(1.2, 2.9 * sstep(-4.5, 1.5, y)); if (rnd() < 0.9) m.sweep([[-Lh + 0.35, y, -w], [-Lh + 0.35, y, w]], 0.82, 0.1, () => [1, 0, 0]); }
-  for (let x = -Lh + 2; x < Lh - 2; x += rr(1.8, 3.2)) m.sweep([[x, sheer(x) - 0.25, -hb(x)], [x, sheer(x) - 0.2, 0], [x, sheer(x) - 0.25, hb(x)]], 0.26, 0.26, up);
-  for (let z = -3.9; z <= 3.9; z += 0.62) { let x = -Lh + rr(1, 5); while (x < Lh - 4) { const x1 = min(x + rr(3, 9), Lh - 3.5); if (rnd() < 0.6) { const pts = []; for (let xx = x; xx <= x1; xx += 1) if (hb(xx) > abs(z) + 0.3) pts.push([xx, sheer(xx) - 0.05, z]); if (pts.length > 1) m.sweep(pts, 0.56, 0.07, up); } x = x1 + rr(0.5, 3); } }
-  // foremast with yard, broken main mast, bowsprit
-  m.sweep([[7, -Dp + 0.6, 0], [7.1, 1, 0], [7.4, 8, 0.3], [7.8, 15, 0.8]], (k) => 0.62 - k * 0.1, (k) => 0.62 - k * 0.1, () => [1, 0, 0]);
-  m.sweep([[7.5, 9.5, -5.2], [7.5, 9.6, 0.3], [7.5, 9.2, 5.6]], 0.26, 0.26, up);
-  m.sweep([[7.7, 13.2, -3.2], [7.7, 13.3, 3.6]], 0.2, 0.2, up);
-  m.sweep([[-3, -Dp + 0.6, 0], [-3.2, 1, 0.2], [-3.9, 6, 1.0], [-5.2, 9.5, 2.6]], (k) => 0.74 - k * 0.1, (k) => 0.74 - k * 0.1, () => [1, 0, 0]);
-  m.sweep([[Lh + 1.4, 2.6, 0], [Lh + 8, 5.2, 0.2]], 0.34, 0.34, up);
+  m.sweep([[W + 0.05, 0.4, -0.8], [W + 0.05, 0.4, 0.8]], 0.12, 2.0, () => [1, 0, 0]);
+  const ch = H.chimney;
+  m.sweep([[ch.x, H.wallH, ch.z], [ch.x, ridge + ch.h, ch.z]], 0.7, 0.7, () => [0, 0, 1]);
   return m;
 }
-// eagle ray: span along x (half span = 1), nose +z; aux = span coordinate for the flap animation
+// eagle: broad tapered wings (span coordinate in aux, for the flap shader),
+// fusiform body along z (nose +z), head, beak and fanned tail
 function meshEagle() {
-  const m = new Mesh(), NU = 72, M = 22, rings = [];
-  for (let j = 0; j <= NU; j++) {
-    const u = j / NU * 2 - 1, au = abs(u);
-    let zl = 0.52 - 0.74 * pow(au, 1.35) + 0.07 * exp(-pow((au - 0.13) / 0.05, 2)) - 0.05 * exp(-pow(au / 0.05, 2)) - 0.08 * pow(au, 5);
-    const zt = -0.5 + 0.3 * pow(au, 0.8) + 0.02 - 0.08 * pow(au, 5);
-    if (zl < zt + 0.004) zl = zt + 0.004;
-    const th = 0.08 * pow(1 - au, 1.15) + 0.004 + 0.12 * exp(-pow(u / 0.2, 2)), ring = [];
-    for (let k = 0; k < M; k++) { const a = k / M * TAU; ring.push(m.v(u, th * sin(a) * (0.62 + 0.38 * cos(a)), mix(zt, zl, 0.5 + 0.5 * cos(a)), u)); }
-    rings.push(ring);
+  const m = new Mesh();
+  for (const s of [-1, 1]) {
+    const NU = 8, prev = [];
+    for (let j = 0; j <= NU; j++) {
+      const u = j / NU, x = s * u, c = eagleWingChord(u), zLe = 0.42 * c, zTe = -0.58 * c, y = 0.06 * u;
+      prev.push([m.v(x, y, zLe, u), m.v(x, y, zTe, u)]);
+      if (j > 0) { const p0 = prev[j - 1], p1 = prev[j]; m.quad(p0[0], p1[0], p1[1], p0[1]); m.quad(p0[1], p1[1], p1[0], p0[0]); }
+    }
   }
-  for (let j = 0; j < NU; j++) for (let k = 0; k < M; k++) { const k2 = (k + 1) % M; m.quad(rings[j][k], rings[j + 1][k], rings[j + 1][k2], rings[j][k2]); }
-  const tail = []; for (let i = 0; i <= 8; i++) tail.push([0, 0, -0.42 - i * 0.19]);
-  const n0 = m.p.length / 3;
-  m.tube(tail, (k) => 0.016 * (1 - k / 9), 4, true);
-  for (let k = n0; k < m.aux.length; k++) m.aux[k] = 0;
-  for (const sx of [-1, 1]) { // cephalic fins
-    const n1 = m.p.length / 3;
-    m.tube([[sx * 0.12, -0.02, 0.48], [sx * 0.135, -0.05, 0.6], [sx * 0.115, -0.09, 0.69], [sx * 0.085, -0.125, 0.74]], (k) => 0.045 * (1 - k / 4.4), 6, true);
-    for (let k = n1; k < m.aux.length; k++) m.aux[k] = sx * 0.1;
+  const rings = [];
+  for (let j = 0; j <= 6; j++) {
+    const t = j / 6, z = -0.9 + t * 1.45, r = 0.17 * Math.pow(Math.sin(Math.PI * (0.12 + 0.88 * t)), 0.8);
+    const ring = [];
+    for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; ring.push(m.v(r * Math.cos(a), r * Math.sin(a) * 0.8, z, 0)); }
+    rings.push(ring);
+    if (j > 0) for (let k = 0; k < 8; k++) { const k2 = (k + 1) % 8; m.quad(rings[j - 1][k], rings[j][k], rings[j][k2], rings[j - 1][k2]); }
+  }
+  const hz = 0.55, nose = rings[6];
+  let prev = nose;
+  for (let j = 1; j <= 3; j++) {
+    const t = j / 3, z = hz + t * 0.13, r = 0.09 * Math.sin(Math.PI * (0.15 + 0.85 * t));
+    const ring = [];
+    for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; ring.push(m.v(r * Math.cos(a), 0.05 + r * Math.sin(a) * 0.85, z, 0)); }
+    for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; m.quad(prev[k], ring[k], ring[k2], prev[k2]); }
+    prev = ring;
+  }
+  m.tube([[0, 0.03, 0.62], [0, 0.01, 0.78]], (k) => 0.035 * (1 - k / 2), 6, true);
+  for (const s of [-0.5, 0, 0.5]) {
+    const a = m.v(0, 0, -0.9), b = m.v(s * 0.28, 0.02, -1.35), c = m.v(s * 0.28 + 0.14, 0.02, -1.32);
+    m.tri(a, b, c); m.tri(a, c, b);
   }
   return m;
 }
 function meshBird() {
   const m = new Mesh();
-  const X = [0.5, 0.3, 0.05, -0.22, -0.34], H = [0.01, 0.13, 0.17, 0.09, 0.035], Wd = [0.01, 0.05, 0.065, 0.03, 0.012], rings = [];
-  for (let i = 0; i < 5; i++) { const r = []; for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; r.push(m.v(X[i], sin(a) * H[i], cos(a) * Wd[i])); } rings.push(r); }
+  const X = [0.5, 0.3, 0.05, -0.22, -0.34], H = [0.01, 0.10, 0.13, 0.07, 0.03], Wd = [0.01, 0.04, 0.05, 0.025, 0.01], rings = [];
+  for (let i = 0; i < 5; i++) { const r = []; for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; r.push(m.v(X[i], Math.sin(a) * H[i], Math.cos(a) * Wd[i])); } rings.push(r); }
   for (let i = 0; i < 4; i++) for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; m.quad(rings[i][k], rings[i + 1][k], rings[i + 1][k2], rings[i][k2]); }
-  const a = m.v(-0.33, 0, 0), b = m.v(-0.56, 0.2, 0), c = m.v(-0.47, 0, 0), d = m.v(-0.56, -0.2, 0);
-  m.tri(a, b, c); m.tri(a, c, d);
+  for (const s of [-1, 1]) {
+    const NU = 5, prev = [];
+    for (let j = 0; j <= NU; j++) {
+      const u = j / NU, c = birdWingChord(u) * 0.6, le = 0.18 - 0.23 * u, z = s * u * 0.55, y = 0.02 + 0.06 * u;
+      prev.push([m.v(le, y, z), m.v(le - c, y, z)]);
+      if (j > 0) { const p0 = prev[j - 1], p1 = prev[j]; m.quad(p0[0], p1[0], p1[1], p0[1]); m.quad(p0[1], p1[1], p1[0], p0[0]); }
+    }
+  }
+  const a = m.v(-0.34, 0, 0), b = m.v(-0.62, 0.02, -0.18), c = m.v(-0.62, 0.02, 0.18);
+  m.tri(a, b, c); m.tri(a, c, b);
   return m;
 }
