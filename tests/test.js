@@ -135,7 +135,7 @@ test('iPhone: quality heuristic prefers Medium on 6+ core iOS, Low below', () =>
   assert.equal(C.qualityFor({ coarse: true, deviceMemory: undefined, hardwareConcurrency: 5, isiOS: true, crashed: false }), 2);
 });
 
-const O = require('../source/src/objects.js');
+const O = require('../src/objects.js');
 
 test('torii: two pillars, wide upturned kasagi, nuki and centred gaku', () => {
   const parts = O.toriiParts();
@@ -198,4 +198,15 @@ test('built index.html: vermilion torii, eagle brown, pale bird belly, rock snow
   assert.ok(built.includes('vec3f(.23,.15,.08)'));
   assert.ok(built.includes('vec3f(.82,.78,.70)'));
   assert.ok(built.includes('vec3f(.85,.88,.92)'));
+});
+
+test('world: pine columns use tapered trunks and branch whorls', () => {
+  assert.ok(worldSrc.includes('pineTrunkRadius'));
+  assert.ok(worldSrc.includes('pineWhorlHeights'));
+});
+
+test('meshes build headlessly (mesh-smoke.mjs)', async () => {
+  const { execFile } = require('node:child_process');
+  const { promisify } = require('node:util');
+  await promisify(execFile)(process.execPath, [path.join(__dirname, 'mesh-smoke.mjs')]);
 });
