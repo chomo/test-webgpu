@@ -17,7 +17,7 @@ To rebuild from source:
 
 ```
 cd source
-node build.mjs        # minified index.html (99.4 kB, 39.6 kB gzipped)
+node build.mjs        # minified index.html (100.2 kB, 39.9 kB gzipped)
 node build.mjs --readable
 ```
 
@@ -48,7 +48,7 @@ queries when the adapter supports them.
 node --test tests/test.js
 ```
 
-26 tests: camera/quality/iOS config, viewpoints and fly path,
+32 tests: camera/quality/iOS config, viewpoints and fly path,
 built-`index.html` regression checks (title, WGSL, controls,
 iPhone support), realistic-object shape parameters (torii, hut,
 eagle/bird wings, pine trunk/whorls), and a headless mesh smoke
@@ -74,14 +74,17 @@ from the parameters in `source/src/objects.js`:
   channel), fusiform body, head, beak, fanned tail; dark brown
   back, pale belly, white head and tail.
 - Birds: slim body, tapered wings that flap, fanned tail.
-- Pines: trunks taper from base to crown, with branch whorls in
-  five tiers. Rocks keep their layered beds and gain snow on
-  high up-facing surfaces.
+- Pines: trunks taper from base to crown with a root flare and
+  bark shading, branch whorls in seven tiers with visible
+  drooping branch stems, and foliage as needle-cluster sprays
+  (thin divergent blades, irregular crown profile, apical
+  shoot) instead of smooth cones. Rocks keep their layered
+  beds and gain snow on high up-facing surfaces.
 
 WebGPU rendering was **not** verified in this environment: no WebGPU
 adapter is available here, so the page shows only the menu and the
 "No WebGPU adapter found" guidance. What was verified: node tests
-(26/26), JS syntax of every source file, the esbuild bundle
-(99.4 kB), the headless mesh smoke test, and the WebGPU-missing
+(32/32), JS syntax of every source file, the esbuild bundle
+(100.2 kB), the headless mesh smoke test, and the WebGPU-missing
 error path. Verify the 3D scene on a WebGPU-capable Chrome/Edge
 or iOS 26+ Safari.

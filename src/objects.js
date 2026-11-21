@@ -25,9 +25,21 @@ function eagleWingSpan() { return 2; }
 function birdWingChord(u) {
   return Math.max(0.05, 0.55 - 0.5 * Math.pow(Math.abs(u), 1.5));
 }
-function pineTrunkRadius(h, H) { return 0.34 * (1 - 0.75 * h / H) + 0.03; }
-function pineWhorlHeights(H) { return [0.28, 0.42, 0.56, 0.70, 0.84].map((f) => f * H); }
+function pineTrunkRadius(h, H) { return 0.34 * (1 - 0.75 * h / H) + 0.03 + 0.06 * Math.exp(-h / 2); }
+function pineWhorlHeights(H) { return [0.16, 0.28, 0.40, 0.52, 0.64, 0.76, 0.86].map((f) => f * H); }
+function pineBranchLength(t) { return 1.9 * (1 - 0.55 * t); }
+function pineBranchDroop(t) { return 1.15 + 0.45 * (1 - t); }
+function pineCrownProfile(t) { return (1 - 0.5 * t * t) * (0.85 + 0.15 * Math.sin(7 * t + 0.6)); }
+function pineNeedleSpray() {
+  return [
+    { yaw: -0.5, tilt: -0.12, len: 0.62, wid: 0.4 },
+    { yaw: -0.25, tilt: -0.05, len: 0.85, wid: 0.42 },
+    { yaw: 0, tilt: 0, len: 1, wid: 0.45 },
+    { yaw: 0.25, tilt: 0.05, len: 0.85, wid: 0.42 },
+    { yaw: 0.5, tilt: 0.12, len: 0.62, wid: 0.4 },
+  ];
+}
 
-const objectsApi = { toriiParts, hutLogs, eagleWingChord, eagleWingSpan, birdWingChord, pineTrunkRadius, pineWhorlHeights };
+const objectsApi = { toriiParts, hutLogs, eagleWingChord, eagleWingSpan, birdWingChord, pineTrunkRadius, pineWhorlHeights, pineBranchLength, pineBranchDroop, pineCrownProfile, pineNeedleSpray };
 if (typeof module !== 'undefined' && module.exports) module.exports = objectsApi;
 if (typeof window !== 'undefined') window.MountainObjects = objectsApi;

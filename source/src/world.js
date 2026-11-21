@@ -91,7 +91,7 @@ function makeWorld(D, T, flyPts, POSES) {
   const big = Array.from({ length: nCells }, () => []), small = Array.from({ length: nCells }, () => []);
   // Medium and Low keep every 2nd / 4th leaf (but every pine stem), made wider; the random stream is the same
   let nth = 0;
-  const leaf = (L, x, y, z, len, yaw, tilt, wid, hA, type, s1, s2, bend) => { if (type === 1 || !(nth++ % THIN)) L[cellOf(x, z)].push(x, y, z, len, yaw, tilt, type === 1 ? wid : wid * (1 + LV / 2), hA, type, s1, s2, bend); };
+  const leaf = (L, x, y, z, len, yaw, tilt, wid, hA, type, s1, s2, bend) => { if (type === 1 || type === 7 || !(nth++ % THIN)) L[cellOf(x, z)].push(x, y, z, len, yaw, tilt, type === 1 || type === 7 ? wid : wid * (1 + LV / 2), hA, type, s1, s2, bend); };
   const glint = (...a) => { nth++ % THIN || glints.push(...a); };
   const solids = []; // per mesh id: arrays of 12 floats
   const props = Array.from({ length: 6 }, () => Array.from({ length: nCells }, () => []));
@@ -136,22 +136,33 @@ function makeWorld(D, T, flyPts, POSES) {
     const strands = 2 + (rnd() < 0.6) + (rnd() < 0.3), ph = rnd() * TAU, tw = rr(0.1, 0.28), sr = rr(0.2, 0.55), sc = rr(0.75, 1.25);
     const la = rnd() * TAU, lm = rr(0, 0.11), full = rr(0.55, 1.3) * dens;
     const stem = (s, h) => { const a = ph + s * TAU / strands + h * tw, r = sr * (1 - 0.6 * h / H), ln = lm * h * h / H; return [x + cos(a) * r + cos(la) * ln, z + sin(a) * r + sin(la) * ln, a]; };
-    for (let s = 0; s < strands; s++) for (let h = 0; h < H - 1; h += 1.7) { const p = stem(s, h); leaf(big, p[0], y + h, p[1], 2.1, p[2] + PI / 2, 0.1, pineTrunkRadius(h, H), h, 1, rnd(), rnd(), 0.3); }
-    const n = floor(H * 30 * full);
-    for (let i = 0; i < n; i++) {
+    for (let s = 0; s < strands; s++) for (let h = 0; h < H - 1; h += 1.7) { const p = stem(s, h); leaf(big, p[0], y + h, p[1], 2.1, p[2] + PI / 2, 0.1, pineTrunkRadius(h, H), h, 7, rnd(), rnd(), 0.3); }
+    // one needle spray = a fan of thin blades sharing a branch point, so the
+    // crown reads as needle clusters, not a smooth cone; tips sway most
+    const spray = (ox, oy, oz, yaw, tilt, len, wid, hA, type, bend, blades) => {
+      for (const b of (blades || pineNeedleSpray())) leaf(big, ox, oy, oz, len * b.len, yaw + b.yaw, tilt + b.tilt, wid * b.wid + 0.02, hA, type, rnd(), rnd(), bend);
+    };
+    const clusters = floor(H * 5 * full);
+    for (let i = 0; i < clusters; i++) {
       const t = pow(rnd(), 0.9), h = t * H, p = stem((rnd() * strands) | 0, h);
-      const L = ((0.55 + 0.75 * rnd() * rnd()) * (1 - 0.5 * t * t) * sc + 0.25) * (kind === 1 ? 1.25 : 1.15);
-      const tilt = mix(rr(0.4, 1.0), rr(0.15, 0.45), t);
+      const a = rnd() * TAU, reach = pineBranchLength(t) * pineCrownProfile(t) * sc;
+      const ox = p[0] + cos(a) * reach * rr(0.3, 0.85), oz = p[1] + sin(a) * reach * rr(0.3, 0.85);
+      const L = reach * rr(0.45, 0.7) * (kind === 1 ? 1.25 : 1.15);
       const type = kind === 1 ? (rnd() < 0.8 ? 3 : 4) : kind === 2 ? (rnd() < 0.5 ? 4 : 0) : 0;
-      leaf(big, p[0], y + h, p[1], L, rnd() * TAU, tilt, L * (kind === 1 ? rr(0.09, 0.13) : rr(0.15, 0.21)) + 0.03, h, type, rnd(), rnd(), rr(0.38, 0.95));
+      spray(ox, y + h, oz, a, pineBranchDroop(t), L, L * rr(0.09, 0.13), h, type, rr(0.5, 1.1));
     }
     for (const wh of pineWhorlHeights(H)) {
-      const t = wh / H, L = 1.35 * (1 - 0.35 * t);
-      for (let k = 0; k < 10; k++) {
-        const a = k / 10 * TAU + ph, r = 0.45 * (1 - 0.4 * t);
-        leaf(big, x + cos(a) * r, y + wh, z + sin(a) * r, L, a, 1.05, 0.12, wh, 0, rnd(), rnd(), 0.6);
+      const t = wh / H, L = pineBranchLength(t) * 0.7;
+      const wtype = kind === 1 ? (rnd() < 0.8 ? 3 : 4) : kind === 2 ? (rnd() < 0.5 ? 4 : 0) : 0;
+      for (let k = 0; k < 8; k++) {
+        const a = k / 8 * TAU + ph, r = 0.45 * (1 - 0.4 * t);
+        // visible branch stem, then a spray at its tip
+        leaf(big, x + cos(a) * r * 0.5, y + wh, z + sin(a) * r * 0.5, L * 0.5, a, pineBranchDroop(t), 0.05, wh, 7, rnd(), rnd(), 0.15);
+        spray(x + cos(a) * r, y + wh, z + sin(a) * r, a, pineBranchDroop(t), L, L * 0.11, wh, wtype, 0.7, pineNeedleSpray().slice(1, 4));
       }
     }
+    // apical shoot: a near-vertical spray crowning the tree
+    spray(x, y + H - 0.5, z, ph, 0.25, 1.3, 0.14, H, 0, 0.9);
     for (let i = floor(H * (kind === 1 ? 16 : 13)); i > 0; i--) { const h = rnd() * H, a = rnd() * TAU, r = rr(0.15, 0.8) * (1 - 0.5 * h / H), ln = lm * h * h / H; glint(x + cos(a) * r + cos(la) * ln, y + h, z + sin(a) * r + sin(la) * ln, h, rnd(), kind === 1 ? rnd() : rnd() * 0.6, rr(0.018, 0.05), 0); }
     // light absorption footprint for the skylight bake
     const hx = round((x - OX) / VS / 2), hz = round((z - OZ) / VS / 2);
