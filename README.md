@@ -17,7 +17,7 @@ To rebuild from source:
 
 ```
 cd source
-node build.mjs        # minified index.html (100.2 kB, 39.9 kB gzipped)
+node build.mjs        # minified index.html (99.9 kB, 39.8 kB gzipped)
 node build.mjs --readable
 ```
 
@@ -48,10 +48,13 @@ queries when the adapter supports them.
 node --test tests/test.js
 ```
 
-32 tests: camera/quality/iOS config, viewpoints and fly path,
+40 tests: camera/quality/iOS config, viewpoints and fly path,
 built-`index.html` regression checks (title, WGSL, controls,
 iPhone support), realistic-object shape parameters (torii, hut,
-eagle/bird wings, pine trunk/whorls), and a headless mesh smoke
+eagle/bird wings, pine trunk/whorls), mountain-atmosphere
+regression checks (no seabed/caustics/refraction left, sky-blue
+and warm-sunset ambient, neutral aerial haze, dappled light),
+and a headless mesh smoke
 test (`node tests/mesh-smoke.mjs`) that builds the torii, hut,
 eagle and bird meshes and checks them for finite vertices and
 valid indices.
@@ -81,10 +84,32 @@ from the parameters in `source/src/objects.js`:
   shoot) instead of smooth cones. Rocks keep their layered
   beds and gain snow on high up-facing surfaces.
 
+## Mountain atmosphere
+
+The first port kept the original's underwater look underneath the
+mountain objects: a blue depth-fog, caustic light webs, a water
+surface with refraction, and sun dimmed below y=0. The atmosphere
+is now mountain air:
+
+- Sky-blue ambient from above, warm ground bounce from below;
+  in the sunset zone the light turns warm gold instead of purple.
+- Fog is neutral aerial perspective (near clear blue, far warm
+  haze), not underwater light absorption; the sun is no longer
+  dimmed below the valley floor.
+- Caustics are gone: the animated texture is now soft billow
+  noise, and terrain/leaves/eagle get gentle dappled sunlight
+  instead of a caustic web.
+- The cloud sea is a cloud layer, not a water surface: no
+  refraction, sky reflection only. The lake keeps its sky
+  reflection and shore foam; the waterfall is unchanged.
+- Rock keeps layered beds and snow, with moss instead of algae
+  and autumn-crimson ground cover in the sunset zone instead of
+  purple. Loading text and comments no longer mention the seabed.
+
 WebGPU rendering was **not** verified in this environment: no WebGPU
 adapter is available here, so the page shows only the menu and the
 "No WebGPU adapter found" guidance. What was verified: node tests
-(32/32), JS syntax of every source file, the esbuild bundle
-(100.2 kB), the headless mesh smoke test, and the WebGPU-missing
+(40/40), JS syntax of every source file, the esbuild bundle
+(99.9 kB), the headless mesh smoke test, and the WebGPU-missing
 error path. Verify the 3D scene on a WebGPU-capable Chrome/Edge
 or iOS 26+ Safari.
