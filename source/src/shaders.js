@@ -422,6 +422,7 @@ fn pal(h: f32) -> vec3f {
     case 4 { col = mix(vec3f(.30, .15, .02), vec3f(.42, .25, .04), s1); pr = vec4f(.2, 1., .1, 0.); spc = vec3f(1., .85, .5); shp = vec2f(.5, .4); wav = 1.8; }
     case 5 { col = mix(vec3f(.85, .12, .05), vec3f(.70, .18, .05), step(.7, s1)); col = mix(col, vec3f(.95, .45, .10), step(.75, s2)); pr = vec4f(.22, .8, 0., .30); spc = vec3f(1., .6, .25); shp = vec2f(.6, .6); fls = 2.; }
     case 6 { col = mix(vec3f(.80, .16, .16), vec3f(.92, .36, .42), s1); pr = vec4f(.06, 1., 0., .10); spc = vec3f(1., .5, .5); shp = vec2f(.4, .3); wav = 2.; }
+    case 7 { col = mix(vec3f(.16, .10, .05), vec3f(.38, .26, .14), s1); pr = vec4f(.05, .25, 0., 0.); spc = vec3f(.2, .15, .1); shp = vec2f(.08, .15); wav = .3; fls = .3; }
     default { col = mix(vec3f(.05, .40, .36), vec3f(.10, .52, .58), s1); pr = vec4f(.1, .9, .2, .04); spc = vec3f(.3, 1., .9); shp = vec2f(.6, .5); }
   }
   pr.x = step(hs(s1 * 91.7 + s2 * 37.1 + i.b.x), pr.x);

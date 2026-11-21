@@ -252,7 +252,7 @@ test('leaf shader: bark is its own leaf type (case 7), not trunk-green', () => {
   const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
   assert.ok(shadersSrc.includes('case 7'));
   const i = shadersSrc.indexOf('case 7');
-  assert.ok(shadersSrc.slice(i, i + 200).includes('vec3f(.16,.10,.05)'));
+  assert.ok(shadersSrc.slice(i, i + 200).includes('vec3f(.16, .10, .05)'));
 });
 
 test('meshes build headlessly (mesh-smoke.mjs)', async () => {
