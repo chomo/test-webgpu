@@ -17,7 +17,7 @@ To rebuild from source:
 
 ```
 cd source
-node build.mjs        # minified index.html (100.1 kB, 40.3 kB gzipped)
+node build.mjs        # minified index.html (99.4 kB, 39.6 kB gzipped)
 node build.mjs --readable
 ```
 
@@ -48,15 +48,40 @@ queries when the adapter supports them.
 node --test tests/test.js
 ```
 
-17 tests: camera/quality/iOS config, viewpoints and fly path,
+26 tests: camera/quality/iOS config, viewpoints and fly path,
 built-`index.html` regression checks (title, WGSL, controls,
-iPhone support).
+iPhone support), realistic-object shape parameters (torii, hut,
+eagle/bird wings, pine trunk/whorls), and a headless mesh smoke
+test (`node tests/mesh-smoke.mjs`) that builds the torii, hut,
+eagle and bird meshes and checks them for finite vertices and
+valid indices.
 
 ## Status / limitation
+
+## Realistic objects
+
+The first port only renamed the original's sea objects: the torii
+was the stone whale fluke, the hut was the sunken ship, the eagle
+was the manta ray and the birds were fish. They are now real
+mountain objects, built procedurally in `source/src/world.js`
+from the parameters in `source/src/objects.js`:
+
+- Torii: two tapered pillars, nuki tie beam, gaku plaque, shimaki
+  and an upturned kasagi, in vermilion lacquer.
+- Hut: stacked log walls (11 courses), gabled roof at 35°,
+  chimney, door at +x.
+- Eagle: broad tapered wings with a real flap (span in the aux
+  channel), fusiform body, head, beak, fanned tail; dark brown
+  back, pale belly, white head and tail.
+- Birds: slim body, tapered wings that flap, fanned tail.
+- Pines: trunks taper from base to crown, with branch whorls in
+  five tiers. Rocks keep their layered beds and gain snow on
+  high up-facing surfaces.
 
 WebGPU rendering was **not** verified in this environment: no WebGPU
 adapter is available here, so the page shows only the menu and the
 "No WebGPU adapter found" guidance. What was verified: node tests
-(17/17), JS syntax of every source file, the esbuild bundle
-(100.1 kB), and the WebGPU-missing error path. Verify the 3D scene
-on a WebGPU-capable Chrome/Edge or iOS 26+ Safari.
+(26/26), JS syntax of every source file, the esbuild bundle
+(99.4 kB), the headless mesh smoke test, and the WebGPU-missing
+error path. Verify the 3D scene on a WebGPU-capable Chrome/Edge
+or iOS 26+ Safari.
