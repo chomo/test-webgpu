@@ -600,7 +600,7 @@ const ui = (m) => {
 const go = () => {
   sound(); ui(false); bDive.textContent = 'Resume';
   // Android Chrome can go fullscreen and lock landscape; iPhone Safari supports neither
-  // (requestFullscreen is iPad-only, orientation.lock is unsupported), so on iOS just dive in.
+  // (requestFullscreen is iPad-only, orientation.lock is unsupported), so on iOS just enter.
   if (mob && !isiOS && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().then(() => screen.orientation?.lock?.('landscape')).catch(() => 0);
   if (!mob) capture();
 };

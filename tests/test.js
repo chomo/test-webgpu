@@ -111,3 +111,26 @@ test('built index.html: controls and viewpoints wired (WASD, Q/E, Shift, 1-6)', 
   assert.ok(built.includes('ShiftLeft') || built.includes('Shift'));
   assert.ok(built.includes('Digit1'));
 });
+
+const tpl = fs.readFileSync(path.join(__dirname, '..', 'source', 'template.html'), 'utf8');
+const mainSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'main.js'), 'utf8');
+
+test('iPhone: template has portrait-native play, safe-area, coarse-pointer UI', () => {
+  assert.ok(tpl.includes('viewport-fit=cover'));
+  assert.ok(tpl.includes('apple-mobile-web-app-capable'));
+  assert.ok(tpl.includes('safe-area-inset'));
+  assert.ok(tpl.includes('Rotate for a wider view'));
+  assert.ok(tpl.includes('@media (pointer: coarse)'));
+  assert.ok(!/rotate\(90deg\)/.test(tpl));
+});
+
+test('iPhone: no fullscreen/orientation lock on iOS, iOS 26+ WebGPU guidance in main', () => {
+  assert.ok(mainSrc.includes("mob && !isiOS && document.documentElement.requestFullscreen"));
+  assert.ok(mainSrc.includes('update to iOS / iPadOS 26 or later and open this page in Safari'));
+  assert.ok(mainSrc.includes('visualViewport'));
+});
+
+test('iPhone: quality heuristic prefers Medium on 6+ core iOS, Low below', () => {
+  assert.equal(C.qualityFor({ coarse: true, deviceMemory: undefined, hardwareConcurrency: 6, isiOS: true, crashed: false }), 1);
+  assert.equal(C.qualityFor({ coarse: true, deviceMemory: undefined, hardwareConcurrency: 5, isiOS: true, crashed: false }), 2);
+});
