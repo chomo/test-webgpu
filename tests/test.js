@@ -255,6 +255,29 @@ test('leaf shader: bark is its own leaf type (case 7), not trunk-green', () => {
   assert.ok(shadersSrc.slice(i, i + 200).includes('vec3f(.16, .10, .05)'));
 });
 
+test('startup: no dangling renamed identifiers in the built bundle', () => {
+  // main.js:409 used PURPLE after world.js renamed it to SUNSET; the built
+  // page then threw ReferenceError at startup. The bundle must not mention it.
+  assert.ok(!built.includes('PURPLE'));
+  // general form of the same bug: every ALL-CAPS name indexed in main.js
+  // must be declared somewhere in the concatenated source
+  const srcFiles = ['config.js', 'quality.js', 'math.js', 'objects.js', 'shaders.js', 'world.js', 'main.js', 'audio.js'];
+  const src = srcFiles.map((f) => fs.readFileSync(path.join(__dirname, '..', 'source', 'src', f), 'utf8')).join('\n');
+  const declared = new Set();
+  for (const m of src.matchAll(/\b(?:const|let|var)\s+([^;]+);/g)) {
+    for (const part of m[1].split(',')) {
+      const id = part.trim().match(/^([A-Za-z_$][\w$]*)/);
+      if (id) declared.add(id[1]);
+    }
+  }
+  for (const m of src.matchAll(/function\s*[A-Za-z_$][\w$]*\s*\(([^)]*)\)/g)) {
+    for (const p of m[1].split(',')) { const id = p.trim().match(/^([A-Za-z_$][\w$]*)/); if (id) declared.add(id[1]); }
+  }
+  const mainSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'main.js'), 'utf8');
+  const indexed = new Set([...mainSrc.matchAll(/\b([A-Z][A-Z0-9_]{1,})\s*\[/g)].map((m) => m[1]));
+  assert.deepEqual([...indexed].filter((n) => !declared.has(n)), []);
+});
+
 test('meshes build headlessly (mesh-smoke.mjs)', async () => {
   const { execFile } = require('node:child_process');
   const { promisify } = require('node:util');
