@@ -174,16 +174,51 @@ test('bird wing: smaller chord, same taper', () => {
   assert.ok(O.birdWingChord(0.95) < 0.1);
 });
 
-test('pine trunk: radius tapers from base to crown; whorls in 5 tiers', () => {
+test('pine trunk: radius tapers from base to crown; whorls in 7 tiers', () => {
   const H = 30;
   assert.ok(O.pineTrunkRadius(0, H) >= 0.3 && O.pineTrunkRadius(0, H) <= 0.45);
   assert.ok(O.pineTrunkRadius(0, H) > O.pineTrunkRadius(H / 2, H));
   assert.ok(O.pineTrunkRadius(H / 2, H) > O.pineTrunkRadius(H, H));
   assert.ok(O.pineTrunkRadius(H, H) > 0);
   const wh = O.pineWhorlHeights(H);
-  assert.equal(wh.length, 5);
+  assert.equal(wh.length, 7);
   for (let i = 1; i < wh.length; i++) assert.ok(wh[i] > wh[i - 1]);
-  assert.ok(wh[0] > 0.2 * H && wh[4] < 0.9 * H);
+  assert.ok(wh[0] > 0.1 * H && wh[6] < 0.9 * H);
+});
+
+test('pine trunk: root flare widens the base, still tapering', () => {
+  const H = 30;
+  assert.ok(O.pineTrunkRadius(0, H) >= 0.4 && O.pineTrunkRadius(0, H) <= 0.45);
+  assert.ok(O.pineTrunkRadius(1, H) < O.pineTrunkRadius(0, H));
+  assert.ok(O.pineTrunkRadius(0, H) > O.pineTrunkRadius(2, H));
+});
+
+test('pine branches: length shrinks with height, droop is strongest at the bottom', () => {
+  assert.ok(O.pineBranchLength(0) > O.pineBranchLength(0.5));
+  assert.ok(O.pineBranchLength(0.5) > O.pineBranchLength(1));
+  assert.ok(O.pineBranchLength(1) > 0);
+  assert.ok(O.pineBranchLength(0) >= 1.5 && O.pineBranchLength(0) <= 2.5);
+  assert.ok(O.pineBranchDroop(0) > Math.PI / 2);
+  assert.ok(O.pineBranchDroop(1) < Math.PI / 2);
+  assert.ok(O.pineBranchDroop(0) > O.pineBranchDroop(0.5));
+  assert.ok(O.pineBranchDroop(0.5) > O.pineBranchDroop(1));
+});
+
+test('pine crown: envelope is irregular, not a smooth cone', () => {
+  assert.ok(O.pineCrownProfile(0) >= 0.85 && O.pineCrownProfile(0) <= 1);
+  assert.ok(O.pineCrownProfile(1) < 0.6);
+  for (let i = 0; i <= 10; i++) { const p = O.pineCrownProfile(i / 10); assert.ok(p > 0 && p <= 1.1); }
+  assert.ok(O.pineCrownProfile(0.3) !== O.pineCrownProfile(0.4));
+});
+
+test('pine needle spray: a fan of thin blades, centre longest', () => {
+  const s = O.pineNeedleSpray();
+  assert.equal(s.length, 5);
+  const mid = s[(s.length - 1) / 2];
+  assert.ok(s.every((b) => b.len > 0 && b.len <= 1 && b.wid > 0 && b.wid < 0.6));
+  assert.ok(s.every((b) => b.len <= mid.len));
+  assert.ok(Math.max(...s.map((b) => b.yaw)) - Math.min(...s.map((b) => b.yaw)) >= 0.9);
+  assert.ok(s[0].yaw < 0 && s[s.length - 1].yaw > 0);
 });
 
 const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
@@ -203,6 +238,21 @@ test('built index.html: vermilion torii, eagle brown, pale bird belly, rock snow
 test('world: pine columns use tapered trunks and branch whorls', () => {
   assert.ok(worldSrc.includes('pineTrunkRadius'));
   assert.ok(worldSrc.includes('pineWhorlHeights'));
+});
+
+test('world: pine foliage is needle sprays, not a smooth cone', () => {
+  assert.ok(worldSrc.includes('pineNeedleSpray'));
+  assert.ok(worldSrc.includes('pineBranchLength'));
+  assert.ok(worldSrc.includes('pineBranchDroop'));
+  assert.ok(worldSrc.includes('pineCrownProfile'));
+  assert.ok(worldSrc.includes('pineBark') || worldSrc.includes(', 7,'));
+});
+
+test('leaf shader: bark is its own leaf type (case 7), not trunk-green', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(shadersSrc.includes('case 7'));
+  const i = shadersSrc.indexOf('case 7');
+  assert.ok(shadersSrc.slice(i, i + 200).includes('vec3f(.16,.10,.05)'));
 });
 
 test('meshes build headlessly (mesh-smoke.mjs)', async () => {

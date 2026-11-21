@@ -27,7 +27,11 @@ function birdWingChord(u) {
 }
 function pineTrunkRadius(h, H) { return 0.34 * (1 - 0.75 * h / H) + 0.03; }
 function pineWhorlHeights(H) { return [0.28, 0.42, 0.56, 0.70, 0.84].map((f) => f * H); }
+function pineBranchLength(t) { return 1; }
+function pineBranchDroop(t) { return 1; }
+function pineCrownProfile(t) { return 1; }
+function pineNeedleSpray() { return [{ yaw: 0, tilt: 0, len: 1, wid: 1 }]; }
 
-const objectsApi = { toriiParts, hutLogs, eagleWingChord, eagleWingSpan, birdWingChord, pineTrunkRadius, pineWhorlHeights };
+const objectsApi = { toriiParts, hutLogs, eagleWingChord, eagleWingSpan, birdWingChord, pineTrunkRadius, pineWhorlHeights, pineBranchLength, pineBranchDroop, pineCrownProfile, pineNeedleSpray };
 if (typeof module !== 'undefined' && module.exports) module.exports = objectsApi;
 if (typeof window !== 'undefined') window.MountainObjects = objectsApi;
