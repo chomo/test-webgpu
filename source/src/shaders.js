@@ -184,10 +184,10 @@ const WK = array<vec3f, 10>(vec3f(1., 2., 1.), vec3f(-2., 1., .9), vec3f(3., 1.,
 // ---------------------------------------------------------------- shared scene code
 const S_G = /*wgsl*/`
 struct G { vp: mat4x4f, sm: mat4x4f, cam: vec4f, right: vec4f, up: vec4f, fwd: vec4f, sun: vec4f, res: vec4f, mis: vec4f };
-const SIG = vec3f(.011, .012, .013);
-const KD = vec3f(.010, .011, .012);
+const SIG = vec3f(.004, .0045, .005);
+const KD = vec3f(.004, .0045, .005);
 const WCOL = vec3f(.62, .76, .96);
-const KDZ = vec3f(.012, .011, .010);
+const KDZ = vec3f(.005, .0045, .004);
 const PCOL = vec3f(.98, .83, .62);
 const SUNC = vec3f(1.8, 1.5, 1.1);
 const TAU = 6.2831853;
@@ -197,9 +197,9 @@ fn ss(a: f32, b: f32, x: f32) -> f32 { let t = clamp((x - a) / (b - a), 0., 1.);
 fn ign(p: vec2f) -> f32 { return fract(52.9829189 * fract(dot(p, vec2f(.06711056, .00583715)))); }
 fn hs(x: f32) -> f32 { return fract(sin(x * 127.1) * 43758.5453); }
 fn kd(z: f32) -> vec3f { return mix(KD, KDZ, z); }
-fn sg(z: f32) -> vec3f { return mix(SIG, vec3f(.016, .013, .010), z); }
+fn sg(z: f32) -> vec3f { return mix(SIG, vec3f(.006, .005, .004), z); }
 fn fin(c: vec3f) -> vec4f { return vec4f(min(max(c, vec3f(0.)), vec3f(40.)), 1.); }
-const KDF = vec3f(.014, .014, .013);
+const KDF = vec3f(.005, .005, .0045);
 fn fogIn(ro: vec3f, rd: vec3f, d: f32, z: f32, sun: vec3f) -> vec3f {
   let k = mix(KD, KDF, z);
   let a = sg(z) - k * rd.y;
@@ -611,8 +611,15 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f };
   return o;
 }
 @fragment fn fsB(i: VO) -> @location(0) vec4f {
-  let p = g.cam.xyz + normalize(i.wp - g.cam.xyz) * 240.;
-  return fin(fog(vec3f(0.), p, zone(p)));
+  let rd = normalize(i.wp - g.cam.xyz);
+  let z = zone(g.cam.xyz + rd * 240.);
+  let up = sat(rd.y);
+  var sky = mix(vec3f(.74, .84, .96), vec3f(.22, .48, .90), pow(up, .55));
+  sky = mix(sky, vec3f(.98, .80, .58), z * (1. - up) * .7);
+  let mu = max(dot(rd, g.sun.xyz), 0.);
+  sky += SUNC * (pow(mu, 350.) * 1.2 + pow(mu, 24.) * .15);
+  let hz = fogIn(g.cam.xyz, rd, 240., z, g.sun.xyz);
+  return fin(mix(sky, hz, ss(.28, -.05, rd.y) * .55));
 }
 `;
 

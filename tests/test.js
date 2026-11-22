@@ -293,11 +293,22 @@ test('atmosphere: ambient is mountain sky blue / warm sunset, not underwater blu
   assert.ok(!shadersSrc.includes('vec3f(.45, .58, .80)'));
 });
 
-test('atmosphere: fog is neutral aerial haze, not blue-green absorption', () => {
+test('atmosphere: fog is light aerial haze, not dense whiteout', () => {
   const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
-  assert.ok(shadersSrc.includes('vec3f(.011, .012, .013)'));
+  assert.ok(shadersSrc.includes('vec3f(.004, .0045, .005)'));
+  assert.ok(!shadersSrc.includes('vec3f(.011, .012, .013)'));
   assert.ok(!shadersSrc.includes('vec3f(.020, .018, .016)'));
   assert.ok(!shadersSrc.includes('vec3f(.020, .018, .015)'));
+});
+
+test('sky: background is a blue gradient with sun glow, not fog alone', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  const i = shadersSrc.indexOf('fn fsB(');
+  assert.ok(i > 0);
+  const body = shadersSrc.slice(i, i + 1200);
+  assert.ok(body.includes('vec3f(.22, .48, .90)'));
+  assert.ok(body.includes('vec3f(.74, .84, .96)'));
+  assert.ok(!body.includes('fog(vec3f(0.)'));
 });
 
 test('atmosphere: light is not dimmed below y=0 (no underwater depth term)', () => {
