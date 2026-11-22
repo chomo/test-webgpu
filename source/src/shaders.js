@@ -594,6 +594,8 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f };
   if (V.y > 0.) {
     let b = textureSampleLevel(tLi, sR, i.wp.xz / 13., 0.).r * .6 + textureSampleLevel(tLi, sR, i.wp.zx / 29. + .4, 0.).r * .4;
     let c = mix(vec3f(.92, .93, .96), vec3f(.55, .60, .70), clamp(b, 0., 1.) * .8);
+    let skyUp = mix(vec3f(.74, .84, .96), vec3f(.22, .48, .90), ss(.0, .6, V.y));
+    c = mix(skyUp, c, ss(.45, .9, length(V.xz)));
     let z = zone(i.wp);
     return fin(fog(c, i.wp, z));
   }

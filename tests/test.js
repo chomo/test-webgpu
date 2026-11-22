@@ -270,6 +270,15 @@ test('cloud sea: the layer sits below the ridges, visible from above', () => {
   assert.ok(shadersSrc.includes('p.x * 900., -20.,'));
 });
 
+test('cloud sea underside: blue sky overhead, clouds toward the horizon', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  const i = shadersSrc.indexOf('if (V.y > 0.)');
+  assert.ok(i > 0);
+  const body = shadersSrc.slice(i, i + 700);
+  assert.ok(body.includes('mix(skyUp, c, ss(.45, .9, length(V.xz)))'));
+  assert.ok(body.includes('vec3f(.22, .48, .90)'));
+});
+
 test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () => {
   assert.ok(!/keel|bowsprit|stern castle|cephalic|manta|fluke/i.test(worldSrc));
   assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));
