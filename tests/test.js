@@ -233,11 +233,27 @@ test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () 
   assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));
 });
 
-test('built index.html: vermilion torii, eagle brown, pale bird belly, rock snow', () => {
+test('built index.html: vermilion torii, eagle brown, warm bird belly, rock snow', () => {
   assert.ok(built.includes('vec3f(.62,.12,.04)'));
   assert.ok(built.includes('vec3f(.23,.15,.08)'));
-  assert.ok(built.includes('vec3f(.82,.78,.70)'));
+  assert.ok(built.includes('vec3f(.55,.50,.42)'));
+  assert.ok(built.includes('vec3f(.62,.56,.46)'));
+  assert.ok(!built.includes('vec3f(.82,.78,.70)'));
   assert.ok(built.includes('vec3f(.85,.88,.92)'));
+});
+
+test('birds and eagle: dark wingtips, not flat white paper planes', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  const bi = shadersSrc.indexOf('fn fsBird');
+  assert.ok(bi > 0);
+  const birdBody = shadersSrc.slice(bi, bi + 900);
+  assert.ok(birdBody.includes('vec3f(.55, .50, .42)'));
+  assert.ok(birdBody.includes('vec3f(.12, .10, .08)'));
+  const ei = shadersSrc.indexOf('fn fsEagle');
+  assert.ok(ei > 0);
+  const eagleBody = shadersSrc.slice(ei, ei + 1400);
+  assert.ok(eagleBody.includes('vec3f(.62, .56, .46)'));
+  assert.ok(eagleBody.includes('vec3f(.15, .11, .07)'));
 });
 
 test('world: pine columns use tapered trunks and branch whorls', () => {
@@ -347,6 +363,7 @@ test('cloud sea: from below it is a soft billowy ceiling, not a shiny water surf
   const body = shadersSrc.slice(i, i + 2500);
   assert.ok(body.includes('if (V.y > 0.)'));
   assert.ok(body.includes('vec3f(.55, .60, .70)'));
+  assert.ok(body.includes('textureSampleLevel(tLi, sR, i.wp.xz / 13., 0.)'));
 });
 
 test('atmosphere: sunset zone is autumn, not purple', () => {

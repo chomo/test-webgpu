@@ -590,12 +590,12 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f };
   let fl = ss(260., 60., d);
   // from below, the cloud sea is a soft billowy ceiling, not a shiny water surface
   if (V.y > 0.) {
-    let b = textureSample(tLi, sR, i.wp.xz / 13.).r * .6 + textureSample(tLi, sR, i.wp.zx / 29. + .4).r * .4;
+    let b = textureSampleLevel(tLi, sR, i.wp.xz / 13., 0.).r * .6 + textureSampleLevel(tLi, sR, i.wp.zx / 29. + .4, 0.).r * .4;
     let c = mix(vec3f(.92, .93, .96), vec3f(.55, .60, .70), clamp(b, 0., 1.) * .8);
     let z = zone(i.wp);
     return fin(fog(c, i.wp, z));
   }
-  let s = (textureSample(tLi, sR, i.wp.xz / 13.).ba + textureSample(tLi, sR, i.wp.zx / 4.7 + .2).ba * .7 + textureSample(tLi, sR, i.wp.xz / 37. + .6).ba * .8) * fl;
+  let s = (textureSampleLevel(tLi, sR, i.wp.xz / 13., 0.).ba + textureSampleLevel(tLi, sR, i.wp.zx / 4.7 + .2, 0.).ba * .7 + textureSampleLevel(tLi, sR, i.wp.xz / 37. + .6, 0.).ba * .8) * fl;
   let n = normalize(vec3f(-s.x * .8, -1., -s.y * .8));
   let ci = sat(dot(V, -n));
   let k = 1. - 1.769 * (1. - ci * ci);
