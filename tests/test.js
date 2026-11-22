@@ -260,6 +260,16 @@ test('flowers: no purple sponge colors, alpine white and yellow instead', () => 
   assert.ok(shadersSrc.includes('vec3f(.88, .86, .80)'));
 });
 
+test('god rays: shaft strength is high enough to read against the terrain', () => {
+  assert.ok(mainSrc.includes('RAYS = 0.9'));
+  assert.ok(!mainSrc.includes('RAYS = 0.54'));
+});
+
+test('cloud sea: the layer sits below the ridges, visible from above', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(shadersSrc.includes('p.x * 900., -20.,'));
+});
+
 test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () => {
   assert.ok(!/keel|bowsprit|stern castle|cephalic|manta|fluke/i.test(worldSrc));
   assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));

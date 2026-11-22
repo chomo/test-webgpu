@@ -583,7 +583,7 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f };
 @vertex fn vs(@builtin(vertex_index) i: u32) -> VO {
   var o: VO;
   let p = vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.;
-  o.wp = vec3f(g.cam.x + p.x * 900., 0., g.cam.z + p.y * 900.);
+  o.wp = vec3f(g.cam.x + p.x * 900., -20., g.cam.z + p.y * 900.);
   o.cp = g.vp * vec4f(o.wp, 1.);
   return o;
 }
