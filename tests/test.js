@@ -243,6 +243,23 @@ test('hut: logs are warm and lit, not a dark box', () => {
   assert.ok(!body.includes('vec3f(.38, .26, .14)'));
 });
 
+test('tube flowers: small cups with a shallow throat, not big coral cups', () => {
+  const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
+  const i = worldSrc.indexOf('function meshTubes');
+  assert.ok(i > 0);
+  const body = worldSrc.slice(i, worldSrc.indexOf('function meshTorii', i));
+  assert.ok(body.includes('rr(0.05, 0.08)'));
+  assert.ok(body.includes('rr(0.3, 0.7)'));
+  assert.ok(body.includes('m.v(e[0], e[1] - rad * 1.2, e[2], 0.35)'));
+});
+
+test('flowers: no purple sponge colors, alpine white and yellow instead', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  assert.ok(!shadersSrc.includes('vec3f(.55, .22, .75)'));
+  assert.ok(!shadersSrc.includes('vec3f(.44, .18, .42)'));
+  assert.ok(shadersSrc.includes('vec3f(.88, .86, .80)'));
+});
+
 test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () => {
   assert.ok(!/keel|bowsprit|stern castle|cephalic|manta|fluke/i.test(worldSrc));
   assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));

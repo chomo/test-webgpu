@@ -345,14 +345,14 @@ fn tri(p: vec3f, n: vec3f, s: f32) -> TP {
   } else if (mat == 4) {
     let hue = fract(sd * 7.31);
     alb = mix(vec3f(.60, .17, .08), vec3f(.64, .35, .10), fract(hue * 3.));
-    if (hue > .75) { alb = vec3f(.44, .18, .42); }
+    if (hue > .75) { alb = vec3f(.85, .82, .60); }
     alb *= (.45 + .75 * B.h) * (.7 + .3 * C.h);
     vao = i.ao * i.ao; gloss = .2; bump = 1.4; flu = .55;
   } else {
     let hue = fract(sd * 5.73);
     alb = mix(vec3f(.80, .08, .10), vec3f(.90, .22, .40), fract(hue * 4.));
     if (hue > .7) { alb = vec3f(.88, .42, .10); }
-    if (hue > .9) { alb = vec3f(.55, .22, .75); }
+    if (hue > .9) { alb = vec3f(.88, .86, .80); }
     alb *= (.4 + .8 * B.h) * (.5 + .9 * i.ao * i.ao);
     alb = mix(alb, vec3f(1., .75, .6), ss(.8, 1., i.ao) * .35);
     emi = alb * .01; flu = .75; gloss = .25; bump = 1.5;

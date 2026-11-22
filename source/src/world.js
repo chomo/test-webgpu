@@ -447,11 +447,11 @@ function meshTubes() {
   rseed(210);
   const m = new Mesh();
   for (let i = 0; i < 9; i++) {
-    const a = rnd() * TAU, r0 = rr(0, 0.28), h = rr(0.45, 1.1), rad = rr(0.07, 0.12), lean = rr(0.05, 0.3), pts = [];
+    const a = rnd() * TAU, r0 = rr(0, 0.28), h = rr(0.3, 0.7), rad = rr(0.05, 0.08), lean = rr(0.05, 0.3), pts = [];
     for (let k = 0; k <= 4; k++) pts.push([cos(a) * (r0 + lean * k / 4 * h), h * k / 4, sin(a) * (r0 + lean * k / 4 * h)]);
     m.tube(pts, (k) => rad * (0.8 + 0.25 * k / 4), 12, false, (k) => 0.35 + 0.65 * k / 4);
-    // rim + dark throat
-    const e = pts[4], n = m.p.length / 3, c = m.v(e[0], e[1] - rad * 1.2, e[2], 0.05);
+    // rim + shallow throat
+    const e = pts[4], n = m.p.length / 3, c = m.v(e[0], e[1] - rad * 1.2, e[2], 0.35);
     for (let s2 = 0; s2 < 12; s2++) m.tri(n - 12 + s2, n - 12 + (s2 + 1) % 12, c);
   }
   return m;
