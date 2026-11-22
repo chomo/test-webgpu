@@ -142,7 +142,7 @@ function makeWorld(D, T, flyPts, POSES) {
     const spray = (ox, oy, oz, yaw, tilt, len, wid, hA, type, bend, blades) => {
       for (const b of (blades || pineNeedleSpray())) leaf(big, ox, oy, oz, len * b.len, yaw + b.yaw, tilt + b.tilt, wid * b.wid + 0.02, hA, type, rnd(), rnd(), bend);
     };
-    const clusters = floor(H * 5 * full);
+    const clusters = floor(H * 7 * full);
     for (let i = 0; i < clusters; i++) {
       const t = pow(rnd(), 0.9), h = t * H, p = stem((rnd() * strands) | 0, h);
       const a = rnd() * TAU, reach = pineBranchLength(t) * pineCrownProfile(t) * sc;

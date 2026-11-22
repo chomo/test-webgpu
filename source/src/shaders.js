@@ -407,7 +407,7 @@ fn pal(h: f32) -> vec3f {
   var col = vec3f(0.); var pr = vec4f(0.); var spc = vec3f(0.); var shp = vec2f(.75, .7); var wav = 1.; var fls = 1.;
   let hsel = hs(s1 * 13.7 + s2 * 71.3);
   switch ty {
-    case 0 { col = mix(vec3f(.11, .125, .022), vec3f(.04, .10, .04), s1); col = mix(col, vec3f(.25, .17, .025), step(.72, s2)); pr = vec4f(.24, .9, 0., 0.); spc = pal(hsel * .72); shp = vec2f(.5, .32); wav = 1.9; }
+    case 0 { col = mix(vec3f(.16, .20, .05), vec3f(.07, .15, .05), s1); col = mix(col, vec3f(.25, .17, .025), step(.72, s2)); pr = vec4f(.24, .9, 0., 0.); spc = pal(hsel * .72); shp = vec2f(.5, .32); wav = 1.9; }
     case 1 { col = vec3f(.10, .11, .035); pr = vec4f(0., .2, 0., 0.); shp = vec2f(.05, .1); wav = .3; fls = .3; }
     case 2 { col = mix(vec3f(.06, .22, .08), vec3f(.12, .30, .10), s1); col = mix(col, vec3f(.45, .25, .05), step(.85, s2)); pr = vec4f(.05, 1.0, .25, 0.); spc = vec3f(.8, 1., .6); shp = vec2f(.45, .35); wav = 2.2; }
     case 3 { col = mix(vec3f(.45, .12, .02), vec3f(.60, .20, .04), s1); col = mix(col, vec3f(.85, .45, .08), step(.8, s2)); pr = vec4f(.2, .85, .55, .02); spc = mix(vec3f(1., .6, .2), vec3f(1., .8, .3), step(.6, hsel)); shp = vec2f(.7, .6); wav = 2.4; }

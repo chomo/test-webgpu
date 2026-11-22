@@ -176,7 +176,7 @@ test('bird wing: smaller chord, same taper', () => {
 
 test('pine trunk: radius tapers from base to crown; whorls in 7 tiers', () => {
   const H = 30;
-  assert.ok(O.pineTrunkRadius(0, H) >= 0.3 && O.pineTrunkRadius(0, H) <= 0.45);
+  assert.ok(O.pineTrunkRadius(0, H) >= 0.5 && O.pineTrunkRadius(0, H) <= 0.6);
   assert.ok(O.pineTrunkRadius(0, H) > O.pineTrunkRadius(H / 2, H));
   assert.ok(O.pineTrunkRadius(H / 2, H) > O.pineTrunkRadius(H, H));
   assert.ok(O.pineTrunkRadius(H, H) > 0);
@@ -188,7 +188,7 @@ test('pine trunk: radius tapers from base to crown; whorls in 7 tiers', () => {
 
 test('pine trunk: root flare widens the base, still tapering', () => {
   const H = 30;
-  assert.ok(O.pineTrunkRadius(0, H) >= 0.4 && O.pineTrunkRadius(0, H) <= 0.45);
+  assert.ok(O.pineTrunkRadius(0, H) >= 0.5 && O.pineTrunkRadius(0, H) <= 0.6);
   assert.ok(O.pineTrunkRadius(1, H) < O.pineTrunkRadius(0, H));
   assert.ok(O.pineTrunkRadius(0, H) > O.pineTrunkRadius(2, H));
 });
@@ -197,7 +197,7 @@ test('pine branches: length shrinks with height, droop is strongest at the botto
   assert.ok(O.pineBranchLength(0) > O.pineBranchLength(0.5));
   assert.ok(O.pineBranchLength(0.5) > O.pineBranchLength(1));
   assert.ok(O.pineBranchLength(1) > 0);
-  assert.ok(O.pineBranchLength(0) >= 1.5 && O.pineBranchLength(0) <= 2.5);
+  assert.ok(O.pineBranchLength(0) >= 2.5 && O.pineBranchLength(0) <= 3.2);
   assert.ok(O.pineBranchDroop(0) > Math.PI / 2);
   assert.ok(O.pineBranchDroop(1) < Math.PI / 2);
   assert.ok(O.pineBranchDroop(0) > O.pineBranchDroop(0.5));
@@ -215,10 +215,15 @@ test('pine needle spray: a fan of thin blades, centre longest', () => {
   const s = O.pineNeedleSpray();
   assert.equal(s.length, 5);
   const mid = s[(s.length - 1) / 2];
-  assert.ok(s.every((b) => b.len > 0 && b.len <= 1 && b.wid > 0 && b.wid < 0.6));
+  assert.ok(s.every((b) => b.len > 0 && b.len <= 1 && b.wid >= 0.5 && b.wid < 0.75));
   assert.ok(s.every((b) => b.len <= mid.len));
   assert.ok(Math.max(...s.map((b) => b.yaw)) - Math.min(...s.map((b) => b.yaw)) >= 0.9);
   assert.ok(s[0].yaw < 0 && s[s.length - 1].yaw > 0);
+});
+
+test('pine crown: clusters are dense enough to read as a crown, not bare stems', () => {
+  const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
+  assert.ok(worldSrc.includes('floor(H * 7 * full)'));
 });
 
 const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
@@ -333,6 +338,15 @@ test('atmosphere: cloud sea is not a water surface (no refraction)', () => {
   const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
   assert.ok(!shadersSrc.includes('refract('));
   assert.ok(!/the water looks/.test(shadersSrc));
+});
+
+test('cloud sea: from below it is a soft billowy ceiling, not a shiny water surface', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  const i = shadersSrc.indexOf('const W_SURF');
+  assert.ok(i > 0);
+  const body = shadersSrc.slice(i, i + 2500);
+  assert.ok(body.includes('if (V.y > 0.)'));
+  assert.ok(body.includes('vec3f(.55, .60, .70)'));
 });
 
 test('atmosphere: sunset zone is autumn, not purple', () => {
