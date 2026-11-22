@@ -520,8 +520,9 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
 @fragment fn fsBird(i: VO) -> @location(0) vec4f {
   let n = normalize(i.n); let L = g.sun.xyz; let V = normalize(g.cam.xyz - i.wp);
   let z = zone(i.wp); let vv = vol(i.wp);
-  var alb = mix(vec3f(.82, .78, .70), vec3f(.20, .16, .12), ss(-.05, .2, i.op.y));
+  var alb = mix(vec3f(.55, .50, .42), vec3f(.20, .16, .12), ss(-.05, .2, i.op.y));
   alb = mix(alb, vec3f(.75, .72, .65), step(.7, fract(i.sd * 5.3)) * .25);
+  alb = mix(alb, vec3f(.12, .10, .08), ss(.4, .55, abs(i.op.z)) * .8);
   let E = sunE(i.wp.y, z) * i.lt;
   var c = alb * (E * (.25 + .75 * sat(dot(n, L))) + amb(i.wp, n, vv.g, z) * 1.3);
   c += E * pow(sat(dot(n, normalize(V + L))), 24.) * 1.6 + vec3f(.3, .6, .7) * pow(1. - sat(dot(n, V)), 3.) * .25 * vv.g;
@@ -558,10 +559,11 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
   let z = zone(i.wp); let vv = vol(i.wp);
   let top = ss(-.2, .25, normalize(i.n).y);
   let au = abs(i.op.x);
-  var belly = vec3f(.82, .78, .70) * (.75 + .25 * tx.b);
+  var belly = vec3f(.62, .56, .46) * (.75 + .25 * tx.b);
   var back = vec3f(.23, .15, .08) + vec3f(.10, .08, .05) * ss(.5, .75, tx.a);
   back = mix(back, vec3f(.45, .35, .22), ss(.3, .0, abs(au - .5) * 3.5 + abs(i.op.z - .1) * 5.) * .5);
   var alb = mix(belly, back, top);
+  alb = mix(alb, vec3f(.15, .11, .07), ss(.7, 1.0, abs(i.op.x)) * .7);
   alb = mix(alb, vec3f(.85, .84, .80), ss(.42, .5, i.op.z) * .9);
   alb = mix(alb, vec3f(.88, .86, .80), ss(-.8, -1.0, i.op.z) * .85);
   let E = sunE(i.wp.y, z) * shadow4(i.wp + n * .3);
