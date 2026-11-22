@@ -228,6 +228,21 @@ test('pine crown: clusters are dense enough to read as a crown, not bare stems',
 
 const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
 
+test('world: hut stands on the ground in the clearing viewpoint 5 looks at', () => {
+  const worldSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'world.js'), 'utf8');
+  assert.ok(worldSrc.includes('solid(11, 6, gy(6, -84)'));
+  assert.ok(!worldSrc.includes('solid(11, 59.5, -23, 6'));
+});
+
+test('hut: logs are warm and lit, not a dark box', () => {
+  const shadersSrc = fs.readFileSync(path.join(__dirname, '..', 'source', 'src', 'shaders.js'), 'utf8');
+  const i = shadersSrc.indexOf('mat == 3');
+  assert.ok(i > 0);
+  const body = shadersSrc.slice(i, i + 600);
+  assert.ok(body.includes('vec3f(.50, .34, .18)'));
+  assert.ok(!body.includes('vec3f(.38, .26, .14)'));
+});
+
 test('world: no sea shapes left in set pieces (no ship keel, manta, fluke)', () => {
   assert.ok(!/keel|bowsprit|stern castle|cephalic|manta|fluke/i.test(worldSrc));
   assert.ok(worldSrc.includes('meshTorii') && worldSrc.includes('meshHut') && worldSrc.includes('meshEagle'));

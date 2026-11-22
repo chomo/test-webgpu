@@ -336,11 +336,11 @@ fn tri(p: vec3f, n: vec3f, s: f32) -> TP {
     gloss = .9; bump = .3;
   } else if (mat == 3) {
     // log cabin: warm log brown, dark groove at each log course, dark slate roof
-    alb = mix(vec3f(.16, .10, .05), vec3f(.38, .26, .14), Wd.b) * (.6 + .5 * B.h);
+    alb = mix(vec3f(.22, .14, .07), vec3f(.50, .34, .18), Wd.b) * (.75 + .5 * B.h);
     let course = fract(i.op.y / 0.56);
     alb *= .55 + .45 * ss(.0, .2, min(course, 1. - course));
     alb *= .8 + .2 * ss(.3, .7, A.c);
-    alb = mix(alb, vec3f(.16, .13, .11) * (.7 + .4 * B.h), ss(3.0, 3.2, i.op.y));
+    alb = mix(alb, vec3f(.22, .18, .15) * (.7 + .4 * B.h), ss(3.0, 3.2, i.op.y));
     gloss = .2; bump = .7;
   } else if (mat == 4) {
     let hue = fract(sd * 7.31);
